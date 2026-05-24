@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    description: >
+      Silver intermediate — order facts with conformed date keys and value segments
+      before loading the Gold fact table.
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null

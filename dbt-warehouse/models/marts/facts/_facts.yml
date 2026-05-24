@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      Gold fact — one row per order (transaction grain).
+      Foreign keys: customer_id → dim_customer, order_date_key → dim_date.
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customer')
+              field: customer_id
+      - name: order_date_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: order_amount
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true

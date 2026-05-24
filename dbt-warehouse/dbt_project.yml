@@ -1,0 +1,68 @@
+name: de_poc_warehouse
+version: 1.0.0
+config-version: 2
+
+profile: de_poc_warehouse
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+on-run-start:
+  - "create schema if not exists silver"
+  - "create schema if not exists gold"
+
+vars:
+  raw_schema: src_local_postgres
+  # Safety window for late-arriving Airbyte rows on incremental runs
+  incremental_lookback_days: 3
+
+models:
+  de_poc_warehouse:
+    +on_schema_change: sync_all_columns
+    staging:
+      +schema: silver
+      +materialized: incremental
+      +incremental_strategy: delete+insert
+      +tags: ["silver", "medallion_silver"]
+    intermediate:
+      +schema: silver
+      +materialized: view
+      +tags: ["silver", "medallion_silver"]
+    marts:
+      dimensions:
+        +schema: gold
+        +materialized: incremental
+        +incremental_strategy: delete+insert
+        +tags: ["gold", "dimension"]
+        +post-hook:
+          - "analyze {{ this }}"
+      facts:
+        +schema: gold
+        +materialized: incremental
+        +incremental_strategy: delete+insert
+        +tags: ["gold", "fact"]
+        +post-hook:
+          - "analyze {{ this }}"
+      marts:
+        +schema: gold
+        +materialized: table
+        +tags: ["gold", "mart"]
+        +post-hook:
+          - "analyze {{ this }}"
+
+seeds:
+  de_poc_warehouse:
+    +schema: silver
+
+tests:
+  +store_failures: true
+  +schema: silver

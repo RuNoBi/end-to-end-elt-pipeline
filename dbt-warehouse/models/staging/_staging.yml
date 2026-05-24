@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >
+      Silver conformed customers — **incremental table** materialized from Bronze.
+      No Postgres dependency on Airbyte raw tables after build (production-safe).
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_orders
+    description: >
+      Silver conformed orders — **incremental table** materialized from Bronze.
+      No Postgres dependency on Airbyte raw tables after build (production-safe).
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id

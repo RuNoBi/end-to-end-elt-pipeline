@@ -1,0 +1,39 @@
+flags:
+  - name: performance.backgroundJsonSchemaValidation
+    serve: false
+  - name: heartbeat.failSync
+    serve: false
+  - name: connectors.versionOverridesEnabled
+    serve: true
+  - name: heartbeat-max-seconds-between-messages
+    serve: "10800"
+  - name: use-new-notification-workflow
+    serve: false
+  - name: validation.removeValidationLimit
+    serve: false
+  - name: connection.columnSelection
+    serve: true
+  - name: refreshSchema.period.hours
+    serve: 0
+  - name: concurrent.source.stream.read
+    serve: false
+  - name: platform.add-scheduling-jitter
+    serve: false
+  - name: connectors.apm-enabled
+    serve: false
+  - name: connectors.useIconUrlInApiResponse
+    serve: true
+  - name: destination-timeout-enabled
+    serve: true
+  - name: destination-timeout.failSync
+    serve: true
+  - name: destination-timeout.seconds
+    serve: 86400
+  - name: platform.inject-aws-secrets-to-connector-pods
+    serve: false
+  - name: orchestrator-fetches-from-init
+    serve: false
+  - name: connector-sidecar-fetches-from-init
+    serve: false
+  - name: platform.fail-sync-on-invalid-checksum
+    serve: false

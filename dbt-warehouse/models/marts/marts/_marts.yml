@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: mart_sales_performance
+    description: >
+      Gold mart — monthly sales KPIs by customer and value segment for BI consumption.
+      Built from the star schema (fct_orders + dim_customer); not a substitute for facts/dims.
+    columns:
+      - name: order_month
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: order_count
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              inclusive: true
+      - name: total_revenue
+        tests:
+          - not_null

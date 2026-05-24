@@ -1,0 +1,33 @@
+name: warehouse-postgres
+
+services:
+  warehouse-postgres:
+    image: postgres:16-alpine
+    container_name: de_poc_warehouse_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    volumes:
+      - warehouse_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - de_poc_network
+
+volumes:
+  warehouse_db_data:
+    name: warehouse_db_data
+
+networks:
+  de_poc_network:
+    name: de_poc_network
+    external: true

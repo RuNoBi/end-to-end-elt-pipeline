@@ -1,0 +1,14 @@
+target/
+dbt_packages/
+logs/
+.env
+.git/
+.gitignore
+*.md
+!README.md
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.vscode/

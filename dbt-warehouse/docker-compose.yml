@@ -1,0 +1,48 @@
+name: dbt-warehouse
+
+services:
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: de-poc-dbt:latest
+    container_name: de_poc_dbt
+    working_dir: /usr/app
+    env_file:
+      - .env
+    environment:
+      DBT_PROFILES_DIR: /usr/app
+    volumes:
+      # Real-time development: edit models locally, run dbt in-container
+      # Do not mount a separate volume over dbt_packages — dbt deps must rmtree/recreate it
+      - .:/usr/app
+    networks:
+      - de_poc_network
+    depends_on: []
+    # Override per command, e.g. docker compose run --rm dbt run
+    profiles:
+      - tools
+
+  dbt-docs:
+    image: de-poc-dbt:latest
+    container_name: de_poc_dbt_docs
+    working_dir: /usr/app
+    env_file:
+      - .env
+    environment:
+      DBT_PROFILES_DIR: /usr/app
+    volumes:
+      - .:/usr/app
+    ports:
+      - "8081:8080"
+    networks:
+      - de_poc_network
+    entrypoint: ["dbt"]
+    command: ["docs", "serve", "--host", "0.0.0.0", "--port", "8080", "--profiles-dir", "/usr/app"]
+    profiles:
+      - docs
+
+networks:
+  de_poc_network:
+    name: de_poc_network
+    external: true

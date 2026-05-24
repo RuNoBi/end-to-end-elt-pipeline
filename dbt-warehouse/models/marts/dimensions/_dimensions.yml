@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: Gold dimension — one row per customer (conformed customer grain).
+    columns:
+      - name: customer_id
+        description: Primary key; joins to fct_orders.customer_id.
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_date
+    description: Gold dimension — calendar spine for order_date keys in the warehouse.
+    columns:
+      - name: date_key
+        description: Surrogate date key (YYYY-MM-DD).
+        tests:
+          - unique
+          - not_null

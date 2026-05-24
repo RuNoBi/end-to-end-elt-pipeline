@@ -1,0 +1,116 @@
+# =============================================================================
+# end-to-end-elt-pipeline — Git ignore policy
+# Goal: never commit secrets, local runtime data, or generated artifacts.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Secrets & local environment
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.crt
+secrets/
+credentials/
+*.credentials.json
+
+# -----------------------------------------------------------------------------
+# PostgreSQL / database local data & volumes
+# -----------------------------------------------------------------------------
+**/pgdata/
+**/pg_data/
+**/postgres-data/
+**/postgresql/data/
+**/data/postgres/
+**/var/lib/postgresql/
+**/*_db_data/
+docker-volumes/
+
+# Named Docker volumes (if bind-mounted into the repo tree)
+airbyte_data/
+airbyte_workspace/
+source_db_data/
+warehouse_db_data/
+dbt_packages_cache/
+
+# Generic local volume folders (do not commit)
+volumes/
+
+# -----------------------------------------------------------------------------
+# dbt (any project path)
+# -----------------------------------------------------------------------------
+**/target/
+**/logs/
+**/dbt_packages/
+**/.user.yml
+**/package-lock.yml.bak
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# -----------------------------------------------------------------------------
+# Docker & Compose local overrides
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# -----------------------------------------------------------------------------
+# Airbyte / local workspace mounts (host paths)
+# -----------------------------------------------------------------------------
+**/airbyte_local/
+**/oss_local_root/
+
+# -----------------------------------------------------------------------------
+# OS & editor
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.iml
+
+# -----------------------------------------------------------------------------
+# Logs & temp files
+# -----------------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+.cache/
+tmp/
+
+# -----------------------------------------------------------------------------
+# Optional: large synthetic seed dumps (uncomment if generated locally)
+# -----------------------------------------------------------------------------
+# **/seeds/data/
+# **/*.csv.gz
+Icon?

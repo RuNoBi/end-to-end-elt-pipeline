@@ -1,0 +1,19 @@
+# Loaded via DBT_PROFILES_DIR=/usr/app (see docker-compose.yml).
+# Credentials come from environment variables — never commit .env.
+
+de_poc_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_WAREHOUSE_HOST') }}"
+      port: "{{ env_var('DBT_WAREHOUSE_PORT', '5432') | int }}"
+      user: "{{ env_var('DBT_WAREHOUSE_USER') }}"
+      password: "{{ env_var('DBT_WAREHOUSE_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_WAREHOUSE_DB') }}"
+      schema: "{{ env_var('DBT_WAREHOUSE_SCHEMA', 'analytics') }}"
+      threads: "{{ env_var('DBT_THREADS', '4') | int }}"
+      keepalives_idle: 0
+      connect_timeout: 10
+      # Reuse connections within a single dbt invocation (lower overhead at scale)
+      retries: 1
