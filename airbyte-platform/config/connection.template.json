@@ -1,0 +1,32 @@
+{
+  "name": "source -> dwh",
+  "connectionId": "REPLACE_AFTER_UI_OR_EXPORT",
+  "namespaceDefinition": "destination",
+  "namespaceFormat": "src_local_postgres",
+  "prefix": "",
+  "nonBreakingChangesPreference": "ignore",
+  "scheduleType": "manual",
+  "syncCatalog": {
+    "streams": [
+      {
+        "stream": { "name": "customers" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["updated_at"],
+          "selected": true
+        }
+      },
+      {
+        "stream": { "name": "orders" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["order_date"],
+          "selected": true
+        }
+      }
+    ]
+  },
+  "notes": "Template for config-as-code. Export real JSON from Airbyte API and store as connections/source_to_dwh.json (gitignored UUID ok in .env only)."
+}

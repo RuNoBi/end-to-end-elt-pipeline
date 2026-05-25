@@ -1,72 +1,46 @@
-# Production workflow (manual orchestration)
+# Production workflow (localhost)
 
-This PoC follows the standard **ingest → transform** split without Airbyte CASCADE.
+Orchestrated by Airflow DAG **`elt_main_pipeline`**. Manual steps below mirror the same order.
 
-## Design principles
+## Automated (recommended)
 
-| Principle | Implementation |
-|-----------|----------------|
-| Bronze is owned by Airbyte | Schema `src_local_postgres` — do not attach Postgres views |
-| Silver is owned by dbt | **Incremental tables** in `silver` — no catalog dependency on Bronze |
-| Gold is owned by dbt | `dim_*`, `fct_*`, `mart_*` in schema `gold` |
-| Consumers query Gold only | BI / analysts use `gold.*`, not raw |
-
-```
-Airbyte  →  src_local_postgres.*     (Bronze, ephemeral from dbt’s perspective)
-dbt run  →  silver.* (TABLE)        (conformed copy)
-dbt run  →  gold.* (TABLE)           (dimensional + marts)
+```text
+Trigger DAG elt_main_pipeline in Airflow (http://localhost:8080)
 ```
 
-## Manual runbook (no automation yet)
+```text
+1. Airbyte sync          → Bronze (src_local_postgres)
+2. dbt source freshness  → fail if Bronze older than SLA
+3. dbt run Silver        → silver.stg_* (+ prune deleted keys)
+4. dbt snapshot          → gold.snap_stg_customers (SCD2)
+5. dbt test Silver       → quality gate
+6. dbt run Gold          → dims / facts / marts
+7. dbt test Gold
+8. Monitor log           → run summary (even on failure)
+```
 
-### Daily / after Airbyte sync
+## Manual (same semantics)
 
 ```bash
-# 1) In Airbyte UI: Sync connection (Destination: drop_cascade = OFF)
-
-# 2) Transform warehouse
+# After Airbyte sync (drop_cascade = OFF)
 cd dbt-warehouse
+make deps
+make freshness
 make run
-
-# 3) Optional quality gate
+make snapshot
+make test-silver
+make run    # gold only if silver tests passed — or: --select marts+
 make test
 ```
 
-### After large backfill or first-time setup
+After large reload or logic change: `make run-full`
 
-```bash
-cd dbt-warehouse
-make run-full
-make test
-```
+## Failure drill
 
-### End of day
+See [../../docs/MONITORING_FAILURE_DRILL.md](../../docs/MONITORING_FAILURE_DRILL.md).
 
-```bash
-# Stop containers only (see root README)
-cd ../airbyte-platform && docker compose stop
-```
+After source revert, rerun from `make run` (or DAG transformation group) — Silver/Gold prune hooks remove stale keys.
 
-## When to use `run-full`
+## Best-practice reference
 
-- First dbt deploy
-- Airbyte full refresh / reload of Bronze
-- Changed model logic in Silver or Gold
-- Tests failing after schema drift
-
-## Airbyte destination settings
-
-| Setting | Production value for this PoC |
-|---------|------------------------------|
-| Drop tables with CASCADE | **OFF** |
-| Namespace / schema | `src_local_postgres` (or your Bronze name) |
-
-Silver tables survive Airbyte table recreation because they are **materialized copies**, not views on Bronze.
-
-## Future automation (not implemented)
-
-Typical next step: Airflow / Dagster / dbt Cloud job with:
-
-```
-airbyte_sync_task >> dbt_run_task >> dbt_test_task
-```
+[../../docs/BEST_PRACTICES_LOCAL.md](../../docs/BEST_PRACTICES_LOCAL.md)

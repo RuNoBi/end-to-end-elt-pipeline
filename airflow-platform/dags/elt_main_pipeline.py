@@ -49,15 +49,24 @@ _DBT_PREAMBLE = f"""
 set -euo pipefail
 cd {DBT_PROJECT_DIR}
 export DBT_PROFILES_DIR={DBT_PROFILES_DIR}
-{DBT_BIN} deps --profiles-dir {DBT_PROFILES_DIR} --quiet || true
+{DBT_BIN} deps --profiles-dir {DBT_PROFILES_DIR}
+"""
+
+DBT_SOURCE_FRESHNESS_CMD = _DBT_PREAMBLE + f"""
+{DBT_BIN} source freshness --profiles-dir {DBT_PROFILES_DIR}
 """
 
 DBT_RUN_SILVER_CMD = _DBT_PREAMBLE + f"""
 {DBT_BIN} run --profiles-dir {DBT_PROFILES_DIR} --select staging+ intermediate+
 """
 
+DBT_SNAPSHOT_CMD = _DBT_PREAMBLE + f"""
+{DBT_BIN} snapshot --profiles-dir {DBT_PROFILES_DIR} --select snap_stg_customers
+"""
+
 DBT_TEST_SILVER_CMD = _DBT_PREAMBLE + f"""
-{DBT_BIN} test --profiles-dir {DBT_PROFILES_DIR} --select staging intermediate
+{DBT_BIN} test --profiles-dir {DBT_PROFILES_DIR} --select staging intermediate source:src_local_postgres
+{DBT_BIN} test --profiles-dir {DBT_PROFILES_DIR} --select test_type:singular
 """
 
 DBT_RUN_GOLD_CMD = _DBT_PREAMBLE + f"""
@@ -175,6 +184,11 @@ def log_pipeline_run_status(**context) -> None:
     if skipped:
         logger.warning("Tasks upstream_failed (%s): %s", len(skipped), skipped)
 
+    if any("dbt_source_freshness" in tid for tid in failed):
+        logger.error(
+            "HINT | Bronze data is stale — check Airbyte sync schedule and "
+            "transformation.dbt_source_freshness log."
+        )
     if any("dbt_test_silver" in tid for tid in failed):
         logger.error(
             "HINT | Silver data-quality gate failed — open Log on "
@@ -199,12 +213,12 @@ def log_pipeline_run_status(**context) -> None:
             AIRBYTE_CONNECTION_ID,
             airbyte_xcom is not None,
         )
-        logger.info("Silver and Gold layers built and tested successfully.")
+        logger.info("Bronze freshness OK; Silver/Gold built, tested, and snapshotted.")
 
 
 with DAG(
     dag_id=DAG_ID,
-    description="End-to-end ELT: Airbyte OSS sync -> dbt run -> dbt test",
+    description="End-to-end ELT: Airbyte → freshness → dbt Silver/Gold → monitor",
     default_args=DEFAULT_ARGS,
     schedule_interval="0 7 * * *",
     start_date=datetime(2026, 1, 1),
@@ -225,19 +239,31 @@ with DAG(
             },
             doc_md=(
                 f"Triggers connection `{AIRBYTE_CONNECTION_ID}` via "
-                "`POST /api/v1/connections/sync` on Airbyte OSS 0.63.x. "
-                "May run 10–60+ minutes for ~1M rows."
+                "`POST /api/v1/connections/sync` on Airbyte OSS 0.63.x."
             ),
+        )
+
+    with TaskGroup(group_id="validation", tooltip="Bronze SLA: source freshness") as validation_group:
+        dbt_source_freshness = BashOperator(
+            task_id="dbt_source_freshness",
+            task_display_name="dbt: source freshness (Bronze SLA)",
+            bash_command=DBT_SOURCE_FRESHNESS_CMD,
         )
 
     with TaskGroup(
         group_id="transformation",
-        tooltip="Silver gate → Gold (dbt run + test per layer)",
+        tooltip="Silver gate → snapshots → Gold",
     ) as transformation_group:
         dbt_run_silver = BashOperator(
             task_id="dbt_run_silver",
             task_display_name="dbt: run Silver (staging → intermediate)",
             bash_command=DBT_RUN_SILVER_CMD,
+        )
+
+        dbt_snapshot_customers = BashOperator(
+            task_id="dbt_snapshot_customers",
+            task_display_name="dbt: snapshot customer history (SCD2)",
+            bash_command=DBT_SNAPSHOT_CMD,
         )
 
         dbt_test_silver = BashOperator(
@@ -258,7 +284,13 @@ with DAG(
             bash_command=DBT_TEST_GOLD_CMD,
         )
 
-        dbt_run_silver >> dbt_test_silver >> dbt_run_gold >> dbt_test_gold
+        (
+            dbt_run_silver
+            >> dbt_snapshot_customers
+            >> dbt_test_silver
+            >> dbt_run_gold
+            >> dbt_test_gold
+        )
 
     with TaskGroup(
         group_id="monitoring",
@@ -271,4 +303,4 @@ with DAG(
             trigger_rule="all_done",
         )
 
-    extraction_group >> transformation_group >> monitoring_group
+    extraction_group >> validation_group >> transformation_group >> monitoring_group

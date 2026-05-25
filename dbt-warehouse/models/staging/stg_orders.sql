@@ -1,4 +1,4 @@
-{{ silver_incremental_config(unique_key='order_id') }}
+{{ silver_incremental_config(unique_key='order_id', bronze_table='orders', bronze_key='id') }}
 
 with
 

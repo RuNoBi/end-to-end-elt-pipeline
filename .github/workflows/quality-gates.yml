@@ -1,0 +1,57 @@
+# Localhost-oriented CI: catch broken dbt/Airflow before merge (no production secrets).
+name: Quality gates
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  dbt-parse:
+    name: dbt parse & compile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt-warehouse
+    env:
+      DBT_TARGET: ci
+      DBT_WAREHOUSE_HOST: localhost
+      DBT_WAREHOUSE_PORT: "5432"
+      DBT_WAREHOUSE_USER: ci
+      DBT_WAREHOUSE_PASSWORD: ci
+      DBT_WAREHOUSE_DB: ci
+      DBT_WAREHOUSE_SCHEMA: ci
+      DBT_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install "dbt-core==1.8.7" "dbt-postgres==1.8.2"
+
+      - name: Install packages
+        run: dbt deps --profiles-dir .
+
+      - name: Parse project
+        run: dbt parse --profiles-dir .
+
+      - name: Compile models
+        run: dbt compile --profiles-dir .
+
+  airflow-dag-check:
+    name: Airflow DAG syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate DAG imports (syntax only)
+        run: |
+          python -m py_compile airflow-platform/dags/elt_main_pipeline.py
+          python -m py_compile airflow-platform/dags/common/alerting.py

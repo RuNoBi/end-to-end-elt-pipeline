@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 LAYER_HINTS: dict[str, str] = {
     "extraction": "Bronze ingest (Airbyte) — check connection, proxy, job API.",
+    "dbt_source_freshness": "Bronze stale — last Airbyte sync too old; check extraction task.",
     "dbt_run_silver": "Silver build — inspect dbt run log; often upstream Bronze/schema.",
+    "dbt_snapshot": "SCD2 snapshot — inspect dbt snapshot log and stg_customers.",
     "dbt_test_silver": "Silver data-quality gate — search Log for 'Failure in test'.",
     "dbt_run_gold": "Gold build — inspect dbt run log and Silver inputs.",
     "dbt_test_gold": "Gold tests — relationships to dim_* or mart constraints.",

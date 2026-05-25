@@ -100,7 +100,8 @@ end-to-end-elt-pipeline/
 - **Environment isolation** — Credentials via `.env` (git-ignored); `.env.example` templates for each service
 - **Data quality** — dbt tests (`unique`, `not_null`, `relationships`, `dbt_utils` range checks) on sources and marts
 - **Performance-aware design** — Incremental facts, indexes via post-hooks, configurable `DBT_THREADS` for ~1M+ row workloads
-- **Orchestrated ELT** — Airflow `LocalExecutor` with Task Groups for Extraction, Transformation, Monitoring
+- **Orchestrated ELT** — Airflow: Airbyte → **source freshness** → Silver → **SCD2 snapshot** → tests → Gold → email alerts
+- **Local best practices** — [docs/BEST_PRACTICES_LOCAL.md](docs/BEST_PRACTICES_LOCAL.md) (prune hooks, CI, config-as-code)
 
 ---
 

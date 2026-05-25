@@ -2,7 +2,8 @@
     config(
         unique_key='customer_id',
         post_hook=[
-            "create index if not exists {{ this.identifier }}_pk_idx on {{ this }} (customer_id)"
+            "create index if not exists {{ this.identifier }}_pk_idx on {{ this }} (customer_id)",
+            "delete from {{ this }} as d where not exists (select 1 from {{ ref('stg_customers') }} as s where s.customer_id = d.customer_id)",
         ]
     )
 }}

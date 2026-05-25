@@ -110,19 +110,15 @@ cd source-postgres
 ./scripts/revert-bad-data.sh
 ```
 
-This removes drill rows from **source**, **Bronze**, **Silver**, and **Gold** (`fct_orders`, `mart_sales_performance`).
+`revert-bad-data.sh` removes drill rows from **source**, **Bronze**, **Silver**, and **Gold**.
 
-### Why tests can still fail after source-only revert
+### Stale rows after revert (fixed in pipeline)
 
-| Layer | After delete in source only |
-|-------|----------------------------|
-| Bronze | Clean after **Airbyte sync** |
-| **Silver** | **Still has old keys** — dbt incremental `merge` does not delete rows removed upstream |
-| **Gold** | Same — `fct_orders` can still reference missing `dim_customer` / `dim_date` |
+Silver/Gold models now run **prune post-hooks** after each incremental build — keys deleted in Bronze are removed from `stg_*` and `fct_orders` on the next `dbt run Silver`.
 
-Symptom: `relationships_stg_orders_...` or `relationships_fct_orders_...` fails with `Got 1 result` even though source is empty.
+If tests still fail once: run **`./scripts/revert-bad-data.sh`** then trigger DAG (or `make run` in dbt-warehouse).
 
-Trigger **`elt_main_pipeline`** again (or **Clear** failed run → rerun `dbt_test_silver` only). All transformation tasks should be **green**.
+Trigger **`elt_main_pipeline`** again. All transformation tasks should be **green**.
 
 ---
 

@@ -7,7 +7,8 @@
         post_hook=[
             "create index if not exists {{ this.identifier }}_order_date_key_idx on {{ this }} (order_date_key)",
             "create index if not exists {{ this.identifier }}_customer_id_idx on {{ this }} (customer_id)",
-            "create index if not exists {{ this.identifier }}_order_status_idx on {{ this }} (order_status)"
+            "create index if not exists {{ this.identifier }}_order_status_idx on {{ this }} (order_status)",
+            "delete from {{ this }} as f where not exists (select 1 from {{ ref('stg_orders') }} as s where s.order_id = f.order_id)",
         ]
     )
 }}

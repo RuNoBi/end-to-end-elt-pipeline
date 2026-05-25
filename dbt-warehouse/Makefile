@@ -4,11 +4,11 @@
 COMPOSE := docker compose --profile tools run --rm dbt
 PROJECT_DIR := /usr/app
 
-.PHONY: help build debug deps seed run run-full test docs docs-serve clean
+.PHONY: help build debug deps seed run run-full freshness snapshot test test-silver docs docs-serve clean parse
 
 help:
-	@echo "Targets: build, deps, run, run-full, test, docs, docs-serve, clean"
-	@echo "Workflow: Airbyte sync (CASCADE off) -> make run -> make test"
+	@echo "Targets: build, deps, freshness, run, snapshot, test, test-silver, run-full, parse, docs, clean"
+	@echo "Workflow: Airbyte sync -> make freshness -> make run -> make snapshot -> make test"
 
 build:
 	docker compose build dbt
@@ -26,12 +26,25 @@ seed:
 run:
 	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select staging+ intermediate+ marts+
 
+freshness:
+	$(COMPOSE) source freshness --profiles-dir $(PROJECT_DIR)
+
+snapshot:
+	$(COMPOSE) snapshot --profiles-dir $(PROJECT_DIR) --select snap_stg_customers
+
 # Full-refresh all models (use after large backfills or logic changes)
 run-full:
 	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --full-refresh
 
 test:
 	$(COMPOSE) test --profiles-dir $(PROJECT_DIR)
+
+test-silver:
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select staging intermediate source:src_local_postgres
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select test_type:singular
+
+parse:
+	DBT_TARGET=ci $(COMPOSE) parse --profiles-dir $(PROJECT_DIR)
 
 docs:
 	$(COMPOSE) docs generate --profiles-dir $(PROJECT_DIR)

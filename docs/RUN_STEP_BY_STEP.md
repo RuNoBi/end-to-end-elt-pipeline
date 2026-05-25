@@ -165,9 +165,12 @@ docker compose up -d
 
 ```text
 extraction (Airbyte sync)
-    → transformation (dbt run Silver → test Silver → run Gold → test Gold)
+    → validation (dbt source freshness — Bronze SLA)
+    → transformation (run Silver → snapshot → test Silver → run Gold → test Gold)
     → monitoring (log run status — รันแม้ pipeline fail)
 ```
+
+รายละเอียด best practice: [BEST_PRACTICES_LOCAL.md](./BEST_PRACTICES_LOCAL.md)
 
 **ฝึกดู failure:** [MONITORING_FAILURE_DRILL.md](./MONITORING_FAILURE_DRILL.md)
 

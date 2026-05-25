@@ -25,17 +25,20 @@ data_warehouse
     └── mart_sales_performance (table, rebuilt each run)
 ```
 
-## Manual workflow (no orchestrator yet)
+## Workflow
 
-See [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md).
+**Orchestrated:** Airflow DAG `elt_main_pipeline` (freshness → Silver → snapshot → tests → Gold).
 
-```text
-1. Airbyte Sync     (drop_cascade = OFF)
-2. cd dbt-warehouse && make run
-3. make test        (optional)
+**Manual:** see [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md).
+
+```bash
+make freshness && make run && make snapshot && make test-silver
+# then gold: make run --select marts+  OR full make test after full run
 ```
 
 After large Airbyte reload: `make run-full`
+
+Local best practices: [../docs/BEST_PRACTICES_LOCAL.md](../docs/BEST_PRACTICES_LOCAL.md)
 
 ## Prerequisites
 
