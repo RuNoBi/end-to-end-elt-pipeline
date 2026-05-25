@@ -1,0 +1,2 @@
+# requests is used by elt_main_pipeline for Airbyte OSS 0.63 Config API
+requests>=2.31.0

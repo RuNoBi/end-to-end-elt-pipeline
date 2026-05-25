@@ -35,7 +35,7 @@ airbyte_data/
 airbyte_workspace/
 source_db_data/
 warehouse_db_data/
-dbt_packages_cache/
+airflow_postgres_data/
 
 # Generic local volume folders (do not commit)
 volumes/
@@ -48,6 +48,9 @@ volumes/
 **/dbt_packages/
 **/.user.yml
 **/package-lock.yml.bak
+
+# Airflow local runtime
+airflow-platform/logs/
 
 # -----------------------------------------------------------------------------
 # Python

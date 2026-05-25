@@ -16,6 +16,7 @@ source-postgres/.env          ← POSTGRES_* for source DB
 warehouse-postgres/.env     ← POSTGRES_* for warehouse (1M rows live here)
 airbyte-platform/.env       ← Airbyte internal + worker config
 dbt-warehouse/.env          ← DBT_WAREHOUSE_* (must match warehouse .env user/password)
+airflow-platform/.env       ← Airflow metadata DB, Fernet key, dbt env for DAG tasks
 ```
 
 After cloning on a new machine:
@@ -25,6 +26,7 @@ cp source-postgres/.env.example source-postgres/.env
 cp warehouse-postgres/.env.example warehouse-postgres/.env
 cp airbyte-platform/.env.example airbyte-platform/.env
 cp dbt-warehouse/.env.example dbt-warehouse/.env
+cp airflow-platform/.env.example airflow-platform/.env
 # Edit each .env with real passwords before docker compose up
 ```
 

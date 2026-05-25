@@ -51,13 +51,17 @@ flowchart TB
   GLD --> BI
 ```
 
+
+
 ### Medallion layers
 
-| Layer | Schema | Owner | Purpose |
-|-------|--------|-------|---------|
-| **Bronze** | `src_local_postgres` | Airbyte | Raw landing tables from source systems (includes Airbyte metadata columns) |
-| **Silver** | `silver` | dbt | Conformed, deduplicated **incremental tables** — decoupled from Bronze at the database catalog level |
-| **Gold** | `gold` | dbt | Dimensional models (`dim_*`, `fct_*`) and report marts (`mart_*`) for analytics |
+
+| Layer      | Schema               | Owner   | Purpose                                                                                              |
+| ---------- | -------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| **Bronze** | `src_local_postgres` | Airbyte | Raw landing tables from source systems (includes Airbyte metadata columns)                           |
+| **Silver** | `silver`             | dbt     | Conformed, deduplicated **incremental tables** — decoupled from Bronze at the database catalog level |
+| **Gold**   | `gold`               | dbt     | Dimensional models (`dim_`*, `fct_*`) and report marts (`mart_*`) for analytics                      |
+
 
 ### Containerization
 
@@ -68,21 +72,24 @@ end-to-end-elt-pipeline/
 ├── source-postgres/       # Synthetic operational database (source)
 ├── warehouse-postgres/    # Analytics warehouse (destination)
 ├── airbyte-platform/      # Airbyte OSS ingestion stack
-└── dbt-warehouse/         # dbt Core transformation project (Dockerized)
+├── dbt-warehouse/         # dbt Core transformation project (Dockerized)
+└── airflow-platform/      # Apache Airflow orchestration (LocalExecutor)
 ```
 
 ---
 
 ## Technology Stack
 
-| Capability | Tool | Role |
-|------------|------|------|
-| **Ingestion** | [Airbyte](https://airbyte.com/) | EL pipelines from Postgres source to warehouse Bronze layer |
-| **Transformation** | [dbt Core](https://www.getdbt.com/) | SQL models, tests, documentation, incremental processing |
-| **Warehouse** | [PostgreSQL 16](https://www.postgresql.org/) | Central store for Bronze, Silver, and Gold |
-| **Containerization** | Docker & Docker Compose | Environment isolation and reproducible deployments |
-| **Orchestration** *(Roadmap)* | [Apache Airflow](https://airflow.apache.org/) | Scheduled sync → transform → test DAGs |
-| **Data Catalog** *(Roadmap)* | [CKAN](https://ckan.org/) | Dataset metadata and discoverability for Gold marts |
+
+| Capability                    | Tool                                          | Role                                                        |
+| ----------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
+| **Ingestion**                 | [Airbyte](https://airbyte.com/)               | EL pipelines from Postgres source to warehouse Bronze layer |
+| **Transformation**            | [dbt Core](https://www.getdbt.com/)           | SQL models, tests, documentation, incremental processing    |
+| **Warehouse**                 | [PostgreSQL 16](https://www.postgresql.org/)  | Central store for Bronze, Silver, and Gold                  |
+| **Containerization**          | Docker & Docker Compose                       | Environment isolation and reproducible deployments          |
+| **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | `elt_main_pipeline` DAG: Airbyte → dbt run → dbt test |
+| **Data Catalog** *(Roadmap)*  | [CKAN](https://ckan.org/)                     | Dataset metadata and discoverability for Gold marts         |
+
 
 ---
 
@@ -93,7 +100,7 @@ end-to-end-elt-pipeline/
 - **Environment isolation** — Credentials via `.env` (git-ignored); `.env.example` templates for each service
 - **Data quality** — dbt tests (`unique`, `not_null`, `relationships`, `dbt_utils` range checks) on sources and marts
 - **Performance-aware design** — Incremental facts, indexes via post-hooks, configurable `DBT_THREADS` for ~1M+ row workloads
-- **Clear operational runbook** — Documented manual workflow prior to orchestration automation
+- **Orchestrated ELT** — Airflow `LocalExecutor` with Task Groups for Extraction, Transformation, Monitoring
 
 ---
 
@@ -113,12 +120,15 @@ end-to-end-elt-pipeline/
 git clone https://github.com/<your-username>/end-to-end-elt-pipeline.git
 cd end-to-end-elt-pipeline
 
-# Copy environment templates (never commit .env files)
+# Copy templates, then align warehouse password across 3 files (see docs/CREDENTIALS.md)
 cp source-postgres/.env.example source-postgres/.env
 cp warehouse-postgres/.env.example warehouse-postgres/.env
 cp airbyte-platform/.env.example airbyte-platform/.env
 cp dbt-warehouse/.env.example dbt-warehouse/.env
+cp airflow-platform/.env.example airflow-platform/.env
 ```
+
+**Full runbook (Thai):** [docs/RUN_STEP_BY_STEP.md](docs/RUN_STEP_BY_STEP.md) · **Credential map:** [docs/CREDENTIALS.md](docs/CREDENTIALS.md)
 
 ### 2. Create the shared Docker network
 
@@ -139,11 +149,13 @@ cd ../warehouse-postgres && docker compose up -d
 cd ../airbyte-platform && docker compose up -d
 ```
 
-| Service | Host URL / Port |
-|---------|-----------------|
-| Source Postgres | `localhost:5433` |
-| Warehouse Postgres | `localhost:5434` |
-| Airbyte UI | [http://localhost:8000](http://localhost:8000) |
+
+| Service            | Host URL / Port                                |
+| ------------------ | ---------------------------------------------- |
+| Source Postgres    | `localhost:5433`                               |
+| Warehouse Postgres | `localhost:5434`                               |
+| Airbyte UI         | [http://localhost:8000](http://localhost:8000) |
+
 
 ### 4. Configure Airbyte (UI)
 
@@ -181,7 +193,25 @@ docker compose --profile tools run --rm dbt run --profiles-dir /usr/app
 docker compose --profile tools run --rm dbt test --profiles-dir /usr/app
 ```
 
-### 6. Query Gold layer (DBeaver / psql)
+### 6. Start Airflow orchestration (optional)
+
+```bash
+cd ../airflow-platform
+cp .env.example .env
+export AIRFLOW_UID=$(id -u)
+mkdir -p logs plugins
+docker compose build && docker compose up -d
+```
+
+| Service | URL |
+|---------|-----|
+| Airflow UI | [http://localhost:8080](http://localhost:8080) |
+
+Set `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` and `AIRFLOW_VAR_AIRBYTE_API_BASE_URL` in `airflow-platform/.env`, then unpause DAG **`elt_main_pipeline`**.
+
+Full guide: [airflow-platform/docs/AIRFLOW_SETUP.md](airflow-platform/docs/AIRFLOW_SETUP.md)
+
+### 7. Query Gold layer (DBeaver / psql)
 
 ```sql
 -- Star schema
@@ -218,10 +248,10 @@ LIMIT 20;
                                                           └─────────────┘
 ```
 
-**Current (manual):** Airbyte Sync → `make run` → `make test`  
-**Roadmap (automated):** Airflow DAG orchestrating sync, dbt run, and dbt test
+**Automated (Airflow):** DAG `elt_main_pipeline` — Airbyte sync → dbt run → dbt test → monitoring logs  
+**Manual fallback:** Airbyte Sync → `make run` → `make test`
 
-Detailed runbook: [`dbt-warehouse/docs/PRODUCTION_WORKFLOW.md`](dbt-warehouse/docs/PRODUCTION_WORKFLOW.md)
+Detailed runbook: `[dbt-warehouse/docs/PRODUCTION_WORKFLOW.md](dbt-warehouse/docs/PRODUCTION_WORKFLOW.md)`
 
 ---
 
@@ -250,13 +280,15 @@ Use `docker compose down` only when intentionally removing containers (volumes a
 
 ## Roadmap
 
-| Phase | Capability | Status |
-|-------|------------|--------|
-| 1 | Medallion ELT on Docker | ✅ Implemented |
-| 2 | dbt data quality tests | ✅ Implemented |
-| 3 | Apache Airflow orchestration | 🔜 Planned |
-| 4 | CKAN data catalog for Gold datasets | 🔜 Planned |
-| 5 | CI/CD for dbt (GitHub Actions) | 🔜 Planned |
+
+| Phase | Capability                          | Status        |
+| ----- | ----------------------------------- | ------------- |
+| 1     | Medallion ELT on Docker             | ✅ Implemented |
+| 2     | dbt data quality tests              | ✅ Implemented |
+| 3     | Apache Airflow orchestration        | ✅ Implemented |
+| 4     | CKAN data catalog for Gold datasets | 🔜 Planned    |
+| 5     | CI/CD for dbt (GitHub Actions)      | 🔜 Planned    |
+
 
 ---
 
@@ -268,6 +300,3 @@ All credentials in `.env.example` files are placeholders for local development o
 
 ---
 
-## License
-
-This project is intended for portfolio and educational use. Add your preferred open-source license before publishing.
