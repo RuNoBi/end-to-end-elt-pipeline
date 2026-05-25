@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Send a test email using Airflow SMTP settings (verify .env before relying on alerts).
+# Send a test email using Airflow SMTP settings (verify .env before relying on alerts)..
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
