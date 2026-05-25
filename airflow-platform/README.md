@@ -38,6 +38,8 @@ airflow-scheduler
     ├─► PythonOperator (OSS Config API)  →  airbyte-proxy:8000/api/v1/connections/sync
     ├─► dbt run/test Silver (gate) → dbt run/test Gold
     └─► Monitor: `log_pipeline_status` (`all_done` — runs on failure too)
+
+**Alerts:** SMTP email on any task failure (after retries) — [docs/AIRFLOW_ALERTING.md](docs/AIRFLOW_ALERTING.md)
     ├─► BashOperator (dbt run/test) →  /opt/dbt (mounted dbt-warehouse/)
     └─► PythonOperator (monitoring logs)
 ```

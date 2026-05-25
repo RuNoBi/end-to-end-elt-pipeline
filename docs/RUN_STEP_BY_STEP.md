@@ -171,6 +171,8 @@ extraction (Airbyte sync)
 
 **ฝึกดู failure:** [MONITORING_FAILURE_DRILL.md](./MONITORING_FAILURE_DRILL.md)
 
+**แจ้งเตือน email เมื่อ task fail:** [../airflow-platform/docs/AIRFLOW_ALERTING.md](../airflow-platform/docs/AIRFLOW_ALERTING.md) — ดูกล่องจดหมายที่ http://localhost:8025 (Mailpit)
+
 รายละเอียด: [../airflow-platform/docs/AIRFLOW_SETUP.md](../airflow-platform/docs/AIRFLOW_SETUP.md)
 
 ---

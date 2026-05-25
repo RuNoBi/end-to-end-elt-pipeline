@@ -20,6 +20,8 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
+from common.alerting import elt_task_failure_email
+
 logger = logging.getLogger(__name__)
 
 DAG_ID = "elt_main_pipeline"
@@ -37,6 +39,7 @@ DEFAULT_ARGS = {
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
+    "on_failure_callback": elt_task_failure_email,
     "retries": 1,
     "retry_delay": timedelta(minutes=3),
     "execution_timeout": timedelta(hours=2),

@@ -2,6 +2,8 @@
 
 Step-by-step instructions to wire Airflow to your existing Docker stack.
 
+**Failure email alerts:** see [AIRFLOW_ALERTING.md](./AIRFLOW_ALERTING.md) (SMTP + `6733193821@student.chula.ac.th` or your on-call list).
+
 ## Prerequisites
 
 1. Shared network exists:

@@ -25,6 +25,17 @@ x-airflow-common: &airflow-common
     DBT_THREADS: ${DBT_THREADS}
     AIRFLOW_VAR_AIRBYTE_CONNECTION_ID: ${AIRFLOW_VAR_AIRBYTE_CONNECTION_ID}
     AIRFLOW_VAR_AIRBYTE_API_BASE_URL: ${AIRFLOW_VAR_AIRBYTE_API_BASE_URL:-http://airbyte-proxy:8000/api/v1}
+    # Failure email alerts (see docs/AIRFLOW_ALERTING.md)
+    AIRFLOW_ALERT_EMAILS: ${AIRFLOW_ALERT_EMAILS:-}
+    AIRFLOW_WEBSERVER_BASE_URL: ${AIRFLOW_WEBSERVER_BASE_URL:-http://localhost:8080}
+    AIRFLOW__SMTP__SMTP_HOST: ${AIRFLOW_SMTP_HOST:-}
+    AIRFLOW__SMTP__SMTP_PORT: ${AIRFLOW_SMTP_PORT:-587}
+    AIRFLOW__SMTP__SMTP_USER: ${AIRFLOW_SMTP_USER:-}
+    AIRFLOW__SMTP__SMTP_PASSWORD: ${AIRFLOW_SMTP_PASSWORD:-}
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${AIRFLOW_SMTP_MAIL_FROM:-}
+    AIRFLOW__SMTP__SMTP_STARTTLS: ${AIRFLOW_SMTP_STARTTLS:-True}
+    AIRFLOW__SMTP__SMTP_SSL: ${AIRFLOW_SMTP_SSL:-False}
+    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW_WEBSERVER_BASE_URL:-http://localhost:8080}
   volumes:
     - ./dags:/opt/airflow/dags
     - airflow_logs:/opt/airflow/logs
@@ -38,6 +49,29 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
+  # Local SMTP for PoC alerts (no external credentials). Web UI: http://localhost:8025
+  airflow-mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: airflow-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      # Optional relay to real inbox — set in .env: AIRFLOW_SMTP_RELAY_HOST + credentials
+      MP_SMTP_RELAY_HOST: ${AIRFLOW_SMTP_RELAY_HOST:-}
+      MP_SMTP_RELAY_PORT: ${AIRFLOW_SMTP_RELAY_PORT:-587}
+      MP_SMTP_RELAY_STARTTLS: ${AIRFLOW_SMTP_RELAY_STARTTLS:-True}
+      MP_SMTP_RELAY_AUTH: ${AIRFLOW_SMTP_RELAY_AUTH:-}
+      MP_SMTP_RELAY_USERNAME: ${AIRFLOW_SMTP_RELAY_USER:-}
+      MP_SMTP_RELAY_PASSWORD: ${AIRFLOW_SMTP_RELAY_PASSWORD:-}
+      MP_SMTP_RELAY_ALL: ${AIRFLOW_SMTP_RELAY_ALL:-false}
+    networks:
+      - de_poc_network
+
   airflow-postgres:
     image: postgres:16-alpine
     container_name: airflow-postgres
@@ -97,6 +131,8 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      airflow-mailpit:
+        condition: service_started
 
   airflow-scheduler:
     <<: *airflow-common
@@ -112,6 +148,8 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      airflow-mailpit:
+        condition: service_started
 
 volumes:
   airflow_postgres_data:
