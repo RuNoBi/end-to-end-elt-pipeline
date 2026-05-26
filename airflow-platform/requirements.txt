@@ -1,2 +1,3 @@
-# requests is used by elt_main_pipeline for Airbyte OSS 0.63 Config API
+# Airbyte OSS API + CKAN publication
 requests>=2.31.0
+psycopg2-binary>=2.9.9

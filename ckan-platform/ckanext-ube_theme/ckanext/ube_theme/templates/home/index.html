@@ -1,0 +1,28 @@
+{% ckan_extends "home/index.html" %}
+
+{% block featured_content %}
+  <div class="ube-hero">
+    <h1>UBE Group Thailand — Enterprise Data Catalog</h1>
+    <p>
+      Curated <strong>Gold datamarts</strong> from the ELT pipeline (Airbyte → dbt).
+      Open a dataset, then use <strong>Preview</strong> or <strong>Data Explorer</strong> to sample rows.
+    </p>
+    <p>
+      <span class="ube-badge">dbt Gold</span>
+      <span class="ube-badge">Datastore API</span>
+      <span class="ube-badge">Daily refresh</span>
+    </p>
+    <div class="ube-actions">
+      <a class="btn btn-primary" href="{{ h.url_for('organization.read', id='ube-group-thailand') }}">
+        Browse UBE datasets
+      </a>
+      <a class="btn btn-default" href="{{ h.url_for('dataset.search') }}">Search all datasets</a>
+    </div>
+  </div>
+  {{ super() }}
+{% endblock %}
+
+{% block styles %}
+  {{ super() }}
+  <link rel="stylesheet" href="/css/ube.css"/>
+{% endblock %}

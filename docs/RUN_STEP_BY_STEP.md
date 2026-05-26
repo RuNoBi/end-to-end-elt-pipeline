@@ -138,7 +138,32 @@ make run
 
 ---
 
-## ขั้นที่ 5 — Airflow ( orchestration )
+## ขั้นที่ 5 — CKAN (Gold datamart / catalog)
+
+```bash
+cd ../ckan-platform
+cp .env.example .env
+docker compose build
+docker compose up -d
+# รอจน healthy (~2–3 นาที)
+chmod +x scripts/bootstrap-ckan.sh
+./scripts/bootstrap-ckan.sh
+```
+
+นำ `AIRFLOW_VAR_CKAN_API_TOKEN` จาก output ไปใส่ใน `airflow-platform/.env` แล้ว rebuild scheduler:
+
+```bash
+cd ../airflow-platform
+docker compose build airflow-scheduler
+```
+
+เปิด catalog: [http://localhost:5001](http://localhost:5001) — หลัง DAG รันสำเร็จจะเห็น datasets ใน org **de-poc-data**
+
+รายละเอียด: [../ckan-platform/docs/CKAN_SETUP.md](../ckan-platform/docs/CKAN_SETUP.md)
+
+---
+
+## ขั้นที่ 6 — Airflow (orchestration)
 
 ```bash
 cd ../airflow-platform
@@ -167,6 +192,7 @@ docker compose up -d
 extraction (Airbyte sync)
     → validation (dbt source freshness — Bronze SLA)
     → transformation (run Silver → snapshot → test Silver → run Gold → test Gold)
+    → publication (CKAN publish Gold marts → http://localhost:5001)
     → monitoring (log run status — รันแม้ pipeline fail)
 ```
 
@@ -186,6 +212,7 @@ extraction (Airbyte sync)
 |--------|-----|
 | Airbyte | http://localhost:8000 |
 | Airflow | http://localhost:8080 |
+| CKAN (Gold datamart) | http://localhost:5001 |
 | dbt docs (optional) | http://localhost:8081 (`make docs-serve` ใน dbt-warehouse) |
 | Source DB | localhost:5433 |
 | Warehouse DB | localhost:5434 |
@@ -196,6 +223,7 @@ extraction (Airbyte sync)
 
 ```bash
 cd airflow-platform && docker compose stop
+cd ../ckan-platform && docker compose stop
 cd ../airbyte-platform && docker compose stop
 cd ../warehouse-postgres && docker compose stop
 cd ../source-postgres && docker compose stop
@@ -211,6 +239,7 @@ cd ../source-postgres && docker compose stop
 cd source-postgres && docker compose start
 cd ../warehouse-postgres && docker compose start
 cd ../airbyte-platform && docker compose start
+cd ../ckan-platform && docker compose start
 cd ../airflow-platform && docker compose start
 ```
 
@@ -226,6 +255,8 @@ cd ../airflow-platform && docker compose start
 | Airbyte sync failed CASCADE | ปิด CASCADE; ใช้ dbt Silver เป็น table |
 | Airflow ไม่เห็น DAG | `docker compose logs airflow-scheduler` |
 | Airbyte task ใน Airflow fail ทันที | ดู log: ถ้าเป็น `Invalid URL .../jobs` = ใช้ DAG เวอร์ชัน OSS API; ตรวจ Variables + `airbyte-platform` up |
+| Airbyte **409 Conflict** | มี sync รันอยู่แล้ว — DAG รุ่นใหม่จะ **รอ job เดิม**; ดู Airbyte UI หรือ `jobs/list` |
+| Airbyte ค้าง running นาน | ปกติสำหรับ ~1M แถว; ดู progress ใน Airbyte UI → Jobs |
 | Airflow init error UID | ใช้ `user: 50000:0` (ไม่ใช้ `id -u`) |
 | DAG **queued** ไม่จบ | มี run เก่าค้าง `running` + `max_active_runs=1` — ดูด้านล่าง |
 

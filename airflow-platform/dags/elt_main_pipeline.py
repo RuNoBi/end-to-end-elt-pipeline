@@ -21,6 +21,7 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 from common.alerting import elt_task_failure_email
+from common.ckan_publish import publish_gold_to_ckan
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,156 @@ DBT_TEST_GOLD_CMD = _DBT_PREAMBLE + f"""
 {DBT_BIN} test --profiles-dir {DBT_PROFILES_DIR} --select marts+
 """
 
+_ACTIVE_AIRBYTE_SYNC_STATUSES = frozenset({"pending", "running", "incomplete"})
+
+
+def _job_progress_stats(job_body: dict[str, Any]) -> dict[str, Any]:
+    """Best-effort stats; jobs/get often omits aggregatedStats while still running."""
+    stats = job_body.get("aggregatedStats") or {}
+    if stats.get("recordsEmitted") is not None or stats.get("recordsCommitted") is not None:
+        return stats
+
+    stream_stats = job_body.get("streamAggregatedStats") or []
+    if stream_stats:
+        emitted = sum(int(s.get("recordsEmitted") or 0) for s in stream_stats)
+        committed = sum(int(s.get("recordsCommitted") or 0) for s in stream_stats)
+        return {"recordsEmitted": emitted, "recordsCommitted": committed}
+
+    return stats
+
+
+def _bronze_orders_row_count() -> int | None:
+    """Count Bronze orders rows when warehouse env is configured (for skip-if-loaded)."""
+    import os
+
+    try:
+        import psycopg2
+    except ImportError:
+        return None
+
+    required = (
+        "DBT_WAREHOUSE_HOST",
+        "DBT_WAREHOUSE_USER",
+        "DBT_WAREHOUSE_PASSWORD",
+        "DBT_WAREHOUSE_DB",
+    )
+    if not all(key in os.environ for key in required):
+        return None
+
+    with psycopg2.connect(
+        host=os.environ["DBT_WAREHOUSE_HOST"],
+        port=int(os.environ.get("DBT_WAREHOUSE_PORT", "5432")),
+        user=os.environ["DBT_WAREHOUSE_USER"],
+        password=os.environ["DBT_WAREHOUSE_PASSWORD"],
+        dbname=os.environ["DBT_WAREHOUSE_DB"],
+    ) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM src_local_postgres.orders")
+            row = cur.fetchone()
+    return int(row[0]) if row else None
+
+
+def _find_active_airbyte_sync_job_id(base: str, connection_id: str) -> int | None:
+    """Return in-flight sync job id for this connection, if any."""
+    response = requests.post(
+        f"{base}/jobs/list",
+        json={
+            "configTypes": ["sync"],
+            "configId": connection_id,
+            "pagination": {"pageSize": 20},
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    for item in response.json().get("jobs") or []:
+        job = item.get("job") or {}
+        if (job.get("status") or "").lower() in _ACTIVE_AIRBYTE_SYNC_STATUSES:
+            job_id = job.get("id")
+            if job_id is not None:
+                return int(job_id)
+    return None
+
+
+def _trigger_or_attach_airbyte_sync(base: str, connection_id: str) -> int:
+    """
+    Start a new sync, or attach to one already running (HTTP 409 Conflict).
+    """
+    trigger = requests.post(
+        f"{base}/connections/sync",
+        json={"connectionId": connection_id},
+        timeout=120,
+    )
+
+    if trigger.status_code == 409:
+        job_id = _find_active_airbyte_sync_job_id(base, connection_id)
+        if job_id is not None:
+            logger.warning(
+                "Airbyte sync already in progress (409) — waiting on existing job_id=%s",
+                job_id,
+            )
+            return job_id
+        raise AirflowException(
+            "Airbyte returned 409 Conflict but no active sync job was found. "
+            "Open Airbyte UI → Connections → check running/cancelled jobs."
+        )
+
+    try:
+        trigger.raise_for_status()
+    except requests.RequestException as exc:
+        raise AirflowException(f"Failed to trigger Airbyte sync: {exc}") from exc
+
+    job = trigger.json().get("job") or {}
+    job_id = job.get("id")
+    if job_id is None:
+        raise AirflowException(f"Unexpected Airbyte sync response: {trigger.json()}")
+    return int(job_id)
+
+
+def _wait_for_airbyte_job(
+    base: str,
+    job_id: int,
+    poll_interval_seconds: int,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        try:
+            status_resp = requests.post(
+                f"{base}/jobs/get",
+                json={"id": job_id},
+                timeout=60,
+            )
+            status_resp.raise_for_status()
+        except requests.RequestException as exc:
+            logger.warning("Poll failed for job %s, retrying: %s", job_id, exc)
+            time.sleep(poll_interval_seconds)
+            continue
+
+        job_body = status_resp.json().get("job") or {}
+        status = (job_body.get("status") or "").lower()
+        stats = _job_progress_stats(job_body)
+        logger.info(
+            "Airbyte job %s status=%s | recordsEmitted=%s | recordsCommitted=%s",
+            job_id,
+            status,
+            stats.get("recordsEmitted"),
+            stats.get("recordsCommitted"),
+        )
+
+        if status == "succeeded":
+            return status_resp.json()
+
+        if status in {"failed", "cancelled"}:
+            raise AirflowException(
+                f"Airbyte job {job_id} ended with status={status}: {status_resp.json()}"
+            )
+
+        time.sleep(poll_interval_seconds)
+
+    raise AirflowException(
+        f"Timeout after {timeout_seconds}s waiting for Airbyte job {job_id}"
+    )
+
 
 def run_airbyte_oss_sync(
     connection_id: str | None = None,
@@ -101,59 +252,33 @@ def run_airbyte_oss_sync(
         base,
     )
 
+    skip_min = int(
+        Variable.get("airbyte_skip_if_bronze_orders_min", default_var="0") or "0"
+    )
+    if skip_min > 0:
+        bronze_orders = _bronze_orders_row_count()
+        if bronze_orders is not None and bronze_orders >= skip_min:
+            logger.info(
+                "Skipping Airbyte sync — Bronze orders already loaded "
+                "(count=%s, threshold=%s). Set airbyte_skip_if_bronze_orders_min=0 "
+                "to force a full re-sync.",
+                bronze_orders,
+                skip_min,
+            )
+            return {
+                "skipped": True,
+                "reason": "bronze_orders_threshold",
+                "bronze_orders_count": bronze_orders,
+                "threshold": skip_min,
+            }
+
     try:
-        trigger = requests.post(
-            f"{base}/connections/sync",
-            json={"connectionId": conn_id},
-            timeout=120,
-        )
-        trigger.raise_for_status()
+        job_id = _trigger_or_attach_airbyte_sync(base, conn_id)
     except requests.RequestException as exc:
-        raise AirflowException(f"Failed to trigger Airbyte sync: {exc}") from exc
+        raise AirflowException(f"Failed to reach Airbyte API: {exc}") from exc
 
-    payload = trigger.json()
-    job = payload.get("job") or {}
-    job_id = job.get("id")
-    if job_id is None:
-        raise AirflowException(f"Unexpected Airbyte sync response: {payload}")
-
-    logger.info(
-        "Airbyte job started | job_id=%s | initial_status=%s",
-        job_id,
-        job.get("status"),
-    )
-
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        try:
-            status_resp = requests.post(
-                f"{base}/jobs/get",
-                json={"id": job_id},
-                timeout=60,
-            )
-            status_resp.raise_for_status()
-        except requests.RequestException as exc:
-            logger.warning("Poll failed for job %s, retrying: %s", job_id, exc)
-            time.sleep(poll_interval_seconds)
-            continue
-
-        job_body = status_resp.json().get("job") or {}
-        status = (job_body.get("status") or "").lower()
-        logger.info("Airbyte job %s status=%s", job_id, status)
-
-        if status == "succeeded":
-            return status_resp.json()
-
-        if status in {"failed", "cancelled"}:
-            raise AirflowException(
-                f"Airbyte job {job_id} ended with status={status}: {status_resp.json()}"
-            )
-
-        time.sleep(poll_interval_seconds)
-
-    raise AirflowException(
-        f"Timeout after {timeout_seconds}s waiting for Airbyte job {job_id}"
-    )
+    logger.info("Airbyte sync job_id=%s — polling until terminal state", job_id)
+    return _wait_for_airbyte_job(base, job_id, poll_interval_seconds, timeout_seconds)
 
 
 def log_pipeline_run_status(**context) -> None:
@@ -203,6 +328,11 @@ def log_pipeline_run_status(**context) -> None:
             "HINT | Extraction failed — check Airbyte UI jobs and "
             "scheduler Log for extraction.trigger_airbyte_sync."
         )
+    if any("publish_gold_to_ckan" in tid for tid in failed):
+        logger.error(
+            "HINT | CKAN publish failed — check CKAN_URL/token and "
+            "publication.publish_gold_to_ckan log."
+        )
 
     if run_state == "success":
         airbyte_xcom = context["ti"].xcom_pull(
@@ -213,12 +343,12 @@ def log_pipeline_run_status(**context) -> None:
             AIRBYTE_CONNECTION_ID,
             airbyte_xcom is not None,
         )
-        logger.info("Bronze freshness OK; Silver/Gold built, tested, and snapshotted.")
+        logger.info("Bronze → Gold built, tested, and published to CKAN catalog.")
 
 
 with DAG(
     dag_id=DAG_ID,
-    description="End-to-end ELT: Airbyte → freshness → dbt Silver/Gold → monitor",
+    description="End-to-end ELT: Airbyte → dbt Gold → CKAN catalog → monitor",
     default_args=DEFAULT_ARGS,
     schedule_interval="0 7 * * *",
     start_date=datetime(2026, 1, 1),
@@ -303,4 +433,25 @@ with DAG(
             trigger_rule="all_done",
         )
 
-    extraction_group >> validation_group >> transformation_group >> monitoring_group
+    with TaskGroup(
+        group_id="publication",
+        tooltip="Publish Gold marts to CKAN Datastore (open data catalog)",
+    ) as publication_group:
+        publish_gold_to_ckan_task = PythonOperator(
+            task_id="publish_gold_to_ckan",
+            task_display_name="CKAN: publish Gold datamarts",
+            python_callable=publish_gold_to_ckan,
+            execution_timeout=timedelta(hours=1),
+            doc_md=(
+                "Copies `gold.mart_sales_performance` and `gold.dim_customer` "
+                "into CKAN Datastore (UBE Group Thailand catalog) at http://localhost:5001"
+            ),
+        )
+
+    (
+        extraction_group
+        >> validation_group
+        >> transformation_group
+        >> publication_group
+        >> monitoring_group
+    )

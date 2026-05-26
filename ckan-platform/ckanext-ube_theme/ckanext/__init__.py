@@ -1,0 +1,1 @@
+# CKAN namespace package

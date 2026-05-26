@@ -104,6 +104,16 @@ UUID stays in `airflow-platform/.env`; JSON is for review and git.
 
 ---
 
+## 9. CKAN catalog (`ckan-platform/`)
+
+- Separate containers (CKAN + Solr + Redis + Datastore DB)
+- Airflow **`publication.publish_gold_to_ckan`** after Gold tests
+- Copy `mart_sales_performance` + `dim_customer` → CKAN Datastore API
+
+See [CKAN_SETUP.md](../ckan-platform/docs/CKAN_SETUP.md).
+
+---
+
 ## What we deliberately did NOT add (production-only)
 
 - Real SMTP / Vault / cloud DW

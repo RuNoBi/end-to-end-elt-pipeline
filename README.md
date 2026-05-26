@@ -73,7 +73,8 @@ end-to-end-elt-pipeline/
 ├── warehouse-postgres/    # Analytics warehouse (destination)
 ├── airbyte-platform/      # Airbyte OSS ingestion stack
 ├── dbt-warehouse/         # dbt Core transformation project (Dockerized)
-└── airflow-platform/      # Apache Airflow orchestration (LocalExecutor)
+├── airflow-platform/      # Apache Airflow orchestration (LocalExecutor)
+└── ckan-platform/         # CKAN open data catalog (Gold datamart UI)
 ```
 
 ---
@@ -88,7 +89,7 @@ end-to-end-elt-pipeline/
 | **Warehouse**                 | [PostgreSQL 16](https://www.postgresql.org/)  | Central store for Bronze, Silver, and Gold                  |
 | **Containerization**          | Docker & Docker Compose                       | Environment isolation and reproducible deployments          |
 | **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | `elt_main_pipeline` DAG: Airbyte → dbt run → dbt test |
-| **Data Catalog** *(Roadmap)*  | [CKAN](https://ckan.org/)                     | Dataset metadata and discoverability for Gold marts         |
+| **Data Catalog**              | [CKAN](https://ckan.org/) (`ckan-platform/`)  | Gold marts published to Datastore; UI :5001                 |
 
 
 ---
@@ -258,21 +259,51 @@ Detailed runbook: `[dbt-warehouse/docs/PRODUCTION_WORKFLOW.md](dbt-warehouse/doc
 
 ## Daily operations
 
-**Stop containers (data preserved):**
+### End of day (stop only, keep data)
 
 ```bash
-cd airbyte-platform && docker compose stop
+# Recommended: one command for daily stop
+./scripts/daily-stop.sh
+
+# Or stop manually
+cd ckan-platform && docker compose stop
+cd ../airflow-platform && docker compose stop
+cd ../airbyte-platform && docker compose stop
 cd ../warehouse-postgres && docker compose stop
 cd ../source-postgres && docker compose stop
 ```
 
-**Resume next day:**
+### Start of day (recommended run order)
+
+Use `--no-recreate` for daily startup to keep stateful DBs stable (prevents CKAN token churn).
+If you intentionally changed Docker images / env, use the normal `up -d` (or rebuild) and then rerun `ckan-platform/scripts/bootstrap-ckan.sh`.
 
 ```bash
-cd source-postgres && docker compose start
-cd ../warehouse-postgres && docker compose start
-cd ../airbyte-platform && docker compose start
+# Recommended: one command for daily start
+./scripts/daily-start.sh
+
+# Or run manually (advanced)
+# 1) Core data services
+cd source-postgres && docker compose up -d --no-recreate
+cd ../warehouse-postgres && docker compose up -d --no-recreate
+cd ../airbyte-platform && docker compose up -d --no-recreate
+
+# 2) Orchestration + catalog
+cd ../airflow-platform && docker compose up -d --no-recreate airflow-scheduler airflow-webserver
+cd ../ckan-platform && docker compose up -d --no-recreate
+
+# 3) Optional: run transformation directly (manual mode)
 cd ../dbt-warehouse && make run
+```
+
+### Daily quick health check
+
+```bash
+cd source-postgres && docker compose ps
+cd ../warehouse-postgres && docker compose ps
+cd ../airbyte-platform && docker compose ps
+cd ../airflow-platform && docker compose ps
+cd ../ckan-platform && docker compose ps
 ```
 
 Use `docker compose down` only when intentionally removing containers (volumes are retained unless `-v` is specified).
@@ -287,8 +318,8 @@ Use `docker compose down` only when intentionally removing containers (volumes a
 | 1     | Medallion ELT on Docker             | ✅ Implemented |
 | 2     | dbt data quality tests              | ✅ Implemented |
 | 3     | Apache Airflow orchestration        | ✅ Implemented |
-| 4     | CKAN data catalog for Gold datasets | 🔜 Planned    |
-| 5     | CI/CD for dbt (GitHub Actions)      | 🔜 Planned    |
+| 4     | CKAN data catalog for Gold datasets | ✅ Implemented |
+| 5     | CI/CD for dbt (GitHub Actions)      | ✅ Implemented |
 
 
 ---

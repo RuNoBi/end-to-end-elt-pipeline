@@ -1,0 +1,7 @@
+{% ckan_extends "header.html" %}
+
+{% block header_logo %}
+  <a class="logo" href="{{ h.url_for('home.index') }}" title="{{ _('Home') }}">
+    <img src="/images/ube-logo.png" alt="UBE Group Thailand Data Catalog" height="44"/>
+  </a>
+{% endblock %}

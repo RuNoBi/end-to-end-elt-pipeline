@@ -25,6 +25,7 @@ LAYER_HINTS: dict[str, str] = {
     "dbt_run_gold": "Gold build — inspect dbt run log and Silver inputs.",
     "dbt_test_gold": "Gold tests — relationships to dim_* or mart constraints.",
     "log_pipeline_status": "Monitoring task — usually secondary; check upstream failure first.",
+    "publish_gold_to_ckan": "CKAN publish — verify CKAN_URL, API token, and ckan container health.",
 }
 
 

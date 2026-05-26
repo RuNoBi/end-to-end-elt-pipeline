@@ -1,0 +1,132 @@
+name: ckan-platform
+
+# Open data catalog for Gold marts — separate from warehouse-postgres.
+# UI: http://localhost:5001
+
+volumes:
+  ckan_storage:
+  ckan_pg_data:
+  ckan_solr_data:
+
+services:
+  ckan-db:
+    image: postgres:16-alpine
+    container_name: ckan-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ckan_pg_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    networks:
+      - de_poc_network
+
+  ckan-redis:
+    image: redis:6-alpine
+    container_name: ckan-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - de_poc_network
+
+  ckan-solr:
+    platform: linux/amd64
+    image: ckan/ckan-solr:2.10-solr9
+    container_name: ckan-solr
+    restart: unless-stopped
+    volumes:
+      - ckan_solr_data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8983/solr/ || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - de_poc_network
+
+  ckan-datapusher:
+    platform: linux/amd64
+    image: ckan/ckan-base-datapusher:0.0.21
+    container_name: ckan-datapusher
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8800/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - de_poc_network
+
+  ckan:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ckan/Dockerfile
+    image: de-poc-ckan:latest
+    container_name: ckan
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CKAN_SITE_URL: ${CKAN_SITE_URL}
+      CKAN_SQLALCHEMY_URL: postgresql://${CKAN_DB_USER}:${CKAN_DB_PASSWORD}@ckan-db/${CKAN_DB}
+      CKAN_DATASTORE_WRITE_URL: postgresql://${CKAN_DB_USER}:${CKAN_DB_PASSWORD}@ckan-db/${DATASTORE_DB}
+      CKAN_DATASTORE_READ_URL: postgresql://${DATASTORE_READONLY_USER}:${DATASTORE_READONLY_PASSWORD}@ckan-db/${DATASTORE_DB}
+      CKAN_SOLR_URL: http://ckan-solr:8983/solr/ckan
+      CKAN_REDIS_URL: redis://ckan-redis:6379/1
+      CKAN_DATAPUSHER_URL: http://ckan-datapusher:8800
+      CKAN__DATAPUSHER__CALLBACK_URL_BASE: http://ckan:5000
+      CKAN__PLUGINS: image_view text_view datatables_view datastore datapusher envvars ube_theme
+      CKAN__SITE__TITLE: ${CKAN_SITE_TITLE:-UBE Group Thailand — Data Catalog}
+      CKAN__SITE__DESCRIPTION: ${CKAN_SITE_DESCRIPTION:-Enterprise Gold datamarts from the ELT platform (Airbyte, dbt, Airflow).}
+      CKAN__VIEWS__DEFAULT_VIEWS: datatables_view
+      CKAN__LOCALE__DEFAULT: en
+      CKAN__LOCALE__UI__DEFAULT: en
+      CKAN__HARVEST__MQ__TYPE: redis
+      CKAN__HARVEST__MQ__HOSTNAME: ckan-redis
+      CKAN__HARVEST__MQ__PORT: "6379"
+      CKAN__HARVEST__MQ__REDIS_DB: "1"
+      CKAN_SYSADMIN_NAME: ${CKAN_SYSADMIN_NAME}
+      CKAN_SYSADMIN_PASSWORD: ${CKAN_SYSADMIN_PASSWORD}
+      CKAN_SYSADMIN_EMAIL: ${CKAN_SYSADMIN_EMAIL}
+    ports:
+      - "${CKAN_PORT_HOST:-5001}:5000"
+    volumes:
+      - ckan_storage:/var/lib/ckan
+    depends_on:
+      ckan-db:
+        condition: service_healthy
+      ckan-redis:
+        condition: service_healthy
+      ckan-solr:
+        condition: service_healthy
+      ckan-datapusher:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:5000/api/action/status_show || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
+    networks:
+      - de_poc_network
+
+networks:
+  de_poc_network:
+    name: de_poc_network
+    external: true
