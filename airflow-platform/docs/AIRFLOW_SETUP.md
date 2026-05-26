@@ -163,7 +163,7 @@ docker exec de_poc_warehouse_postgres psql -U warehouse_admin -d data_warehouse 
 
 ## Retries & timeouts
 
-Configured in `dags/elt_main_pipeline.py`:
+Configured in `config/pipelines/*.yaml` (DAG factory: `dags/elt_pipelines.py`). PoC DAG id remains `elt_main_pipeline`:
 
 | Setting | Value |
 |---------|--------|
@@ -238,7 +238,7 @@ default_args = {
 | Permission denied on logs/ | `chmod -R 775 logs` or use Docker volume `airflow_logs` (default in compose) |
 | DAG runs stuck **queued** | Another run is **running** (`max_active_runs=1`). Fail stuck runs: see RUN_STEP_BY_STEP.md troubleshooting |
 | Scheduler **unhealthy** | `docker compose restart airflow-scheduler` after fixing logs |
-| DAG not visible | Check `./dags/elt_main_pipeline.py` syntax; `docker compose logs airflow-scheduler` |
+| DAG not visible | Check `./dags/elt_pipelines.py` and `./config/pipelines/*.yaml`; `docker compose logs airflow-scheduler` |
 
 ---
 

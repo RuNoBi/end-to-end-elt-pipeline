@@ -1,0 +1,57 @@
+# SAP chemical sales — same operational DB as sales_local_postgres (de_poc_source_postgres).
+# Airbyte: reuse the same Source connector; add a second Connection → Bronze src_sap_chemicals.
+# Tables live in schema sap (analogue: SAP tables on one MSSQL Server).
+
+pipeline_id: sap_chemicals
+dag_id: elt_sap_chemicals
+enabled: true
+description: "SAP mock chemical sales → Bronze → Silver/Gold → CKAN (UBE chemicals PoC)"
+owner: data-engineering
+tags:
+  - elt
+  - sap
+  - chemicals
+  - ube
+schedule: "30 11 * * *"
+timezone: Asia/Bangkok
+max_active_runs: 1
+catchup: false
+start_date: "2026-01-01"
+
+airbyte:
+  connection_id_variable: airbyte_connection_id_sap_chemicals
+  api_base_url_variable: airbyte_api_base_url
+  poll_interval_seconds: 30
+  timeout_seconds: 7200
+  bronze_schema: src_sap_chemicals
+  expected_streams:
+    sap_material:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [updated_at]
+    sap_business_partner:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [updated_at]
+    sap_sales_order:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [changed_at]
+    sap_sales_order_item:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [item_changed_at]
+
+dbt:
+  bronze_source: src_sap_chemicals
+  freshness_select: "source:src_sap_chemicals"
+  silver_run_select: "tag:pipeline_sap_chemicals"
+  snapshots: []
+  silver_test_select: "tag:pipeline_sap_chemicals source:src_sap_chemicals"
+  run_singular_tests: true
+  gold_run_select: "tag:pipeline_sap_chemicals"
+  gold_test_select: "tag:pipeline_sap_chemicals"
+
+ckan:
+  enabled: true
+  publications_file: sap_chemicals.yaml

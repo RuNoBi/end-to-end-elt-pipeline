@@ -9,7 +9,8 @@ x-airflow-common: &airflow-common
     - .env
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow-postgres/${POSTGRES_DB}
+    # Use AIRFLOW_METADATA_* (not generic POSTGRES_*) so shell env from source-postgres cannot break Airflow DB
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_METADATA_USER}:${AIRFLOW_METADATA_PASSWORD}@airflow-postgres/${AIRFLOW_METADATA_DB}
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
@@ -25,6 +26,7 @@ x-airflow-common: &airflow-common
     DBT_WAREHOUSE_SCHEMA: ${DBT_WAREHOUSE_SCHEMA}
     DBT_THREADS: ${DBT_THREADS}
     AIRFLOW_VAR_AIRBYTE_CONNECTION_ID: ${AIRFLOW_VAR_AIRBYTE_CONNECTION_ID}
+    AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_SAP_CHEMICALS: ${AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_SAP_CHEMICALS:-}
     AIRFLOW_VAR_AIRBYTE_API_BASE_URL: ${AIRFLOW_VAR_AIRBYTE_API_BASE_URL:-http://airbyte-proxy:8000/api/v1}
     # Failure email alerts (see docs/AIRFLOW_ALERTING.md)
     AIRFLOW_ALERT_EMAILS: ${AIRFLOW_ALERT_EMAILS:-}
@@ -49,6 +51,7 @@ x-airflow-common: &airflow-common
     AIRFLOW_VAR_CKAN_UPSERT_BATCH_SIZE: ${CKAN_UPSERT_BATCH_SIZE:-2000}
   volumes:
     - ./dags:/opt/airflow/dags
+    - ./config:/opt/airflow/pipeline_config
     - airflow_logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ../dbt-warehouse:/opt/dbt
@@ -89,13 +92,13 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${AIRFLOW_METADATA_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_METADATA_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_METADATA_DB}
     volumes:
       - airflow_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_METADATA_USER} -d ${AIRFLOW_METADATA_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5

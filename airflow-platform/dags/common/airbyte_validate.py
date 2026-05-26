@@ -14,20 +14,6 @@ from airflow.exceptions import AirflowException
 
 logger = logging.getLogger(__name__)
 
-_EXPECTED_STREAMS: dict[str, dict[str, Any]] = {
-    "customers": {
-        "syncMode": "incremental",
-        "destinationSyncMode": "append_dedup",
-        "cursorField": ["created_at"],
-    },
-    "orders": {
-        "syncMode": "incremental",
-        "destinationSyncMode": "append_dedup",
-        "cursorField": ["order_date"],
-    },
-}
-
-
 def _normalize_cursor(cursor: Any) -> list[str]:
     if cursor is None:
         return []
@@ -40,6 +26,7 @@ def validate_airbyte_connection(
     api_base_url: str,
     connection_id: str,
     *,
+    expected_streams: dict[str, dict[str, Any]] | None = None,
     timeout_seconds: int = 60,
 ) -> dict[str, Any]:
     """
@@ -67,6 +54,7 @@ def validate_airbyte_connection(
             f"Airbyte connection {connection_id} has no streams in syncCatalog."
         )
 
+    expected_catalog = expected_streams or {}
     issues: list[str] = []
     configured: list[dict[str, Any]] = []
 
@@ -90,24 +78,32 @@ def validate_airbyte_connection(
             }
         )
 
-        expected = _EXPECTED_STREAMS.get(name)
+        expected = expected_catalog.get(name)
         if expected is None:
-            logger.warning("Airbyte stream %s is not in the expected catalog template", name)
+            if expected_catalog:
+                logger.warning(
+                    "Airbyte stream %s is not listed in pipeline expected_streams",
+                    name,
+                )
             continue
 
-        if sync_mode != expected["syncMode"] or dest_mode != expected["destinationSyncMode"]:
+        if sync_mode != expected.get("syncMode") or dest_mode != expected.get(
+            "destinationSyncMode"
+        ):
             issues.append(
                 f"{name}: syncMode={sync_mode!r} destinationSyncMode={dest_mode!r} "
-                f"(expected incremental + append_dedup)"
+                f"(expected {expected.get('syncMode')!r} + {expected.get('destinationSyncMode')!r})"
             )
-        elif cursor != expected["cursorField"]:
+        elif cursor != _normalize_cursor(expected.get("cursorField")):
             issues.append(
-                f"{name}: cursorField={cursor!r} (expected {expected['cursorField']!r})"
+                f"{name}: cursorField={cursor!r} "
+                f"(expected {_normalize_cursor(expected.get('cursorField'))!r})"
             )
 
-    missing = sorted(set(_EXPECTED_STREAMS) - {s["name"] for s in configured})
-    if missing:
-        issues.append(f"missing streams: {', '.join(missing)}")
+    if expected_catalog:
+        missing = sorted(set(expected_catalog) - {s["name"] for s in configured})
+        if missing:
+            issues.append(f"missing streams: {', '.join(missing)}")
 
     if issues:
         raise AirflowException(

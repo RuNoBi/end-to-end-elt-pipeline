@@ -1,0 +1,42 @@
+# CKAN datasets for pipeline sap_chemicals (SAP mock chemical sales).
+
+publications:
+  - package_name: sap-chemical-sales-performance
+    package_title: SAP Chemical Sales Performance (Monthly)
+    resource_name: mart_sap_chemical_sales_performance
+    schema: gold
+    table: mart_sap_chemical_sales_performance
+    description: >
+      Monthly chemical sales KPIs by material group, plant, and customer segment
+      (dbt Gold mart_sap_chemical_sales_performance).
+    primary_key: order_month,material_group,product_hierarchy,plant_code,sales_organization,country_code,customer_group,order_status,deal_size_segment
+    frequency: daily
+
+  - package_name: sap-chemical-customers
+    package_title: SAP Chemical Customers (Business Partners)
+    resource_name: dim_sap_customer
+    schema: gold
+    table: dim_sap_customer
+    description: Sold-to business partners for UBE chemical sales (dim_sap_customer).
+    primary_key: partner_number
+    max_rows: "50000"
+    frequency: daily
+
+  - package_name: sap-chemical-materials
+    package_title: SAP Chemical Materials Master
+    resource_name: dim_sap_material
+    schema: gold
+    table: dim_sap_material
+    description: Material master for chemical products (dim_sap_material).
+    primary_key: material_number
+    frequency: daily
+
+  - package_name: sap-chemical-sales-lines
+    package_title: SAP Chemical Sales Order Lines
+    resource_name: fct_sap_sales_lines
+    schema: gold
+    table: fct_sap_sales_lines
+    description: Order line facts — quantity in MT and net value (sample capped in catalog).
+    primary_key: sales_order_item_key
+    max_rows: "100000"
+    frequency: daily

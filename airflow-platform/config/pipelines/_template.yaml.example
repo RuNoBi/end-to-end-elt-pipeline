@@ -1,0 +1,45 @@
+# Copy to my_new_source.yaml and set enabled: true
+# One file per business pipeline (usually one Airbyte connection + one dbt domain).
+
+pipeline_id: my_new_source
+dag_id: elt_my_new_source
+enabled: false
+description: "Describe business domain and source system"
+owner: data-engineering
+tags:
+  - elt
+  - my_new_source
+schedule: "0 11 * * *"
+timezone: Asia/Bangkok
+max_active_runs: 1
+catchup: false
+start_date: "2026-01-01"
+
+airbyte:
+  # Create connection in Airbyte UI, then store UUID in Airflow Variable:
+  #   AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_MY_NEW_SOURCE
+  connection_id_variable: airbyte_connection_id_my_new_source
+  api_base_url_variable: airbyte_api_base_url
+  poll_interval_seconds: 30
+  timeout_seconds: 7200
+  bronze_schema: src_my_new_source
+  expected_streams:
+    my_table:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [updated_at]
+
+dbt:
+  bronze_source: src_my_new_source
+  freshness_select: "source:src_my_new_source"
+  # Tag all models for this pipeline: pipeline_my_new_source (see dbt_project.yml + model tags)
+  silver_run_select: "tag:pipeline_my_new_source,staging+ tag:pipeline_my_new_source,intermediate+"
+  snapshots: []
+  silver_test_select: "tag:pipeline_my_new_source,staging tag:pipeline_my_new_source,intermediate source:src_my_new_source"
+  run_singular_tests: true
+  gold_run_select: "tag:pipeline_my_new_source,marts+"
+  gold_test_select: "tag:pipeline_my_new_source,marts+"
+
+ckan:
+  enabled: false
+  publications_file: my_new_source.yaml

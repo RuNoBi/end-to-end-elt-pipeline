@@ -439,12 +439,28 @@ def _publish_table(pub: dict[str, str]) -> dict[str, Any]:
     return {"resource_id": resource_id, "rows": total, "package": pub["package_name"]}
 
 
-def publish_gold_to_ckan(**context: Any) -> list[dict[str, Any]]:
-    """Airflow callable: refresh all configured Gold datasets in CKAN."""
+def publish_gold_to_ckan(
+    publications: list[dict[str, str]] | None = None,
+    **context: Any,
+) -> list[dict[str, Any]]:
+    """Airflow callable: refresh configured Gold datasets in CKAN."""
     _ckan_preflight()
+    pubs = publications if publications is not None else GOLD_PUBLICATIONS
     results: list[dict[str, Any]] = []
-    for pub in GOLD_PUBLICATIONS:
+    for pub in pubs:
         results.append(_publish_table(pub))
 
     logger.info("CKAN publication complete: %s", results)
     return results
+
+
+def make_ckan_publish_callable(publications_file: str):
+    """Factory: load publications YAML for this pipeline."""
+    from common.pipeline_config import load_ckan_publications
+
+    publications = load_ckan_publications(publications_file)
+
+    def _publish(**context: Any) -> list[dict[str, Any]]:
+        return publish_gold_to_ckan(publications=publications, **context)
+
+    return _publish

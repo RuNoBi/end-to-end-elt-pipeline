@@ -1,0 +1,48 @@
+# Retail sales (public.customers/orders) on shared source-postgres → Bronze src_local_postgres.
+# Copy _template.yaml.example for each new source; one enabled file = one Airflow DAG.
+
+pipeline_id: sales_local_postgres
+dag_id: elt_main_pipeline
+enabled: true
+description: "Sales source → Bronze → Silver/Gold → CKAN (UBE PoC reference)"
+owner: data-engineering
+tags:
+  - elt
+  - sales
+  - medallion
+schedule: "0 11 * * *"
+timezone: Asia/Bangkok
+max_active_runs: 1
+catchup: false
+start_date: "2026-01-01"
+
+airbyte:
+  connection_id_variable: airbyte_connection_id
+  api_base_url_variable: airbyte_api_base_url
+  poll_interval_seconds: 30
+  timeout_seconds: 7200
+  bronze_schema: src_local_postgres
+  expected_streams:
+    customers:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [created_at]
+    orders:
+      syncMode: incremental
+      destinationSyncMode: append_dedup
+      cursorField: [order_date]
+
+dbt:
+  bronze_source: src_local_postgres
+  freshness_select: "source:src_local_postgres"
+  silver_run_select: "tag:pipeline_sales_local_postgres"
+  snapshots:
+    - snap_stg_customers
+  silver_test_select: "tag:pipeline_sales_local_postgres source:src_local_postgres"
+  run_singular_tests: true
+  gold_run_select: "tag:pipeline_sales_local_postgres"
+  gold_test_select: "tag:pipeline_sales_local_postgres"
+
+ckan:
+  enabled: true
+  publications_file: sales_local_postgres.yaml
