@@ -32,11 +32,11 @@ docker compose exec -T ckan ckan -c /srv/app/ckan.ini datastore set-permissions 
 token_works() {
   local token="$1"
   [[ -z "$token" ]] && return 1
-  # Must be able to edit a dataset; this is what Airflow needs (package_patch).
-  curl -sf -X POST "${CKAN_URL}/api/3/action/package_patch" \
+  # Must be able to edit the org (same permission Airflow needs for package_create).
+  curl -sf -X POST "${CKAN_URL}/api/3/action/organization_patch" \
     -H "Authorization: ${token}" \
     -H "Content-Type: application/json" \
-    -d '{"id":"sales-performance-mart","notes":"token_probe"}' \
+    -d "{\"id\":\"${ORG}\",\"notes\":\"token_probe\"}" \
     >/dev/null 2>&1
 }
 

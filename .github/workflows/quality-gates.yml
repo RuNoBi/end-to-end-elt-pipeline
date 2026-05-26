@@ -83,3 +83,5 @@ jobs:
         run: |
           python -m py_compile airflow-platform/dags/elt_main_pipeline.py
           python -m py_compile airflow-platform/dags/common/alerting.py
+          python -m py_compile airflow-platform/dags/common/airbyte_validate.py
+          python -m py_compile airflow-platform/dags/common/ckan_publish.py

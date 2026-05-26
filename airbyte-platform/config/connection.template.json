@@ -13,7 +13,7 @@
         "config": {
           "syncMode": "incremental",
           "destinationSyncMode": "append_dedup",
-          "cursorField": ["updated_at"],
+          "cursorField": ["created_at"],
           "selected": true
         }
       },

@@ -174,16 +174,17 @@ def _ckan_preflight() -> None:
             f"or create the org in the CKAN UI."
         )
 
-    # Prove token can write (stale tokens after ckan-db recreate cause package_patch 403).
+    # Prove token can write (works before any dataset exists; stale tokens fail here).
     probe = _ckan_action(
-        "package_patch",
-        {"id": "sales-performance-mart", "notes": status.get("site_title", "probe")},
+        "organization_patch",
+        {"id": org, "notes": f"elt-pipeline probe {date.today().isoformat()}"},
         allow_auth_failure=True,
     )
     if probe is _AUTH_FAILED:
         raise AirflowException(
-            "CKAN API token cannot edit datasets. Run: cd ckan-platform && ./scripts/bootstrap-ckan.sh "
-            "then copy CKAN_API_TOKEN into airflow-platform/.env and restart airflow-scheduler."
+            "CKAN API token cannot edit the organization. Run: cd ckan-platform && "
+            "./scripts/bootstrap-ckan.sh then copy CKAN_API_TOKEN into airflow-platform/.env "
+            "and restart airflow-scheduler."
         )
 
 

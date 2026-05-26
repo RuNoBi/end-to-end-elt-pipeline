@@ -20,16 +20,30 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
+from common.airbyte_validate import validate_airbyte_connection
 from common.alerting import elt_task_failure_email
 from common.ckan_publish import publish_gold_to_ckan
 
 logger = logging.getLogger(__name__)
 
 DAG_ID = "elt_main_pipeline"
-AIRBYTE_CONNECTION_ID = Variable.get(
-    "airbyte_connection_id",
-    default_var="b84b53a7-abfa-4c29-9f6b-c663dd0f4283",
-)
+
+
+def _require_airbyte_connection_id() -> str:
+    conn_id = Variable.get("airbyte_connection_id", default_var="").strip()
+    if not conn_id:
+        raise AirflowException(
+            "airbyte_connection_id is not set. Add AIRFLOW_VAR_AIRBYTE_CONNECTION_ID "
+            "to airflow-platform/.env (from Airbyte UI → Connections)."
+        )
+    return conn_id
+
+
+def _airbyte_api_base() -> str:
+    return Variable.get(
+        "airbyte_api_base_url",
+        default_var="http://airbyte-proxy:8000/api/v1",
+    ).rstrip("/")
 
 DBT_PROJECT_DIR = "/opt/dbt"
 DBT_PROFILES_DIR = "/opt/dbt"
@@ -94,37 +108,6 @@ def _job_progress_stats(job_body: dict[str, Any]) -> dict[str, Any]:
         return {"recordsEmitted": emitted, "recordsCommitted": committed}
 
     return stats
-
-
-def _bronze_orders_row_count() -> int | None:
-    """Count Bronze orders rows when warehouse env is configured (for skip-if-loaded)."""
-    import os
-
-    try:
-        import psycopg2
-    except ImportError:
-        return None
-
-    required = (
-        "DBT_WAREHOUSE_HOST",
-        "DBT_WAREHOUSE_USER",
-        "DBT_WAREHOUSE_PASSWORD",
-        "DBT_WAREHOUSE_DB",
-    )
-    if not all(key in os.environ for key in required):
-        return None
-
-    with psycopg2.connect(
-        host=os.environ["DBT_WAREHOUSE_HOST"],
-        port=int(os.environ.get("DBT_WAREHOUSE_PORT", "5432")),
-        user=os.environ["DBT_WAREHOUSE_USER"],
-        password=os.environ["DBT_WAREHOUSE_PASSWORD"],
-        dbname=os.environ["DBT_WAREHOUSE_DB"],
-    ) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM src_local_postgres.orders")
-            row = cur.fetchone()
-    return int(row[0]) if row else None
 
 
 def _find_active_airbyte_sync_job_id(base: str, connection_id: str) -> int | None:
@@ -237,40 +220,15 @@ def run_airbyte_oss_sync(
     **context: Any,
 ) -> dict[str, Any]:
     """Trigger and wait for Airbyte OSS 0.63 sync via Config API."""
-    conn_id = connection_id or Variable.get(
-        "airbyte_connection_id",
-        default_var="b84b53a7-abfa-4c29-9f6b-c663dd0f4283",
-    )
-    base = (api_base_url or Variable.get(
-        "airbyte_api_base_url",
-        default_var="http://airbyte-proxy:8000/api/v1",
-    )).rstrip("/")
+    conn_id = connection_id or _require_airbyte_connection_id()
+    base = (api_base_url or _airbyte_api_base()).rstrip("/")
 
+    preflight = validate_airbyte_connection(base, conn_id)
     logger.info(
         "Starting Airbyte OSS sync | connection_id=%s | api_base=%s",
         conn_id,
         base,
     )
-
-    skip_min = int(
-        Variable.get("airbyte_skip_if_bronze_orders_min", default_var="0") or "0"
-    )
-    if skip_min > 0:
-        bronze_orders = _bronze_orders_row_count()
-        if bronze_orders is not None and bronze_orders >= skip_min:
-            logger.info(
-                "Skipping Airbyte sync — Bronze orders already loaded "
-                "(count=%s, threshold=%s). Set airbyte_skip_if_bronze_orders_min=0 "
-                "to force a full re-sync.",
-                bronze_orders,
-                skip_min,
-            )
-            return {
-                "skipped": True,
-                "reason": "bronze_orders_threshold",
-                "bronze_orders_count": bronze_orders,
-                "threshold": skip_min,
-            }
 
     try:
         job_id = _trigger_or_attach_airbyte_sync(base, conn_id)
@@ -278,7 +236,16 @@ def run_airbyte_oss_sync(
         raise AirflowException(f"Failed to reach Airbyte API: {exc}") from exc
 
     logger.info("Airbyte sync job_id=%s — polling until terminal state", job_id)
-    return _wait_for_airbyte_job(base, job_id, poll_interval_seconds, timeout_seconds)
+    result = _wait_for_airbyte_job(base, job_id, poll_interval_seconds, timeout_seconds)
+    job = result.get("job") or {}
+    stats = _job_progress_stats(job)
+    return {
+        "preflight": preflight,
+        "jobId": job_id,
+        "status": job.get("status"),
+        "recordsEmitted": stats.get("recordsEmitted"),
+        "recordsCommitted": stats.get("recordsCommitted"),
+    }
 
 
 def log_pipeline_run_status(**context) -> None:
@@ -338,11 +305,13 @@ def log_pipeline_run_status(**context) -> None:
         airbyte_xcom = context["ti"].xcom_pull(
             task_ids="extraction.trigger_airbyte_sync"
         )
-        logger.info(
-            "Airbyte connection_id=%s | sync_result_present=%s",
-            AIRBYTE_CONNECTION_ID,
-            airbyte_xcom is not None,
-        )
+        if isinstance(airbyte_xcom, dict):
+            logger.info(
+                "Airbyte job_id=%s | emitted=%s | committed=%s",
+                airbyte_xcom.get("jobId"),
+                airbyte_xcom.get("recordsEmitted"),
+                airbyte_xcom.get("recordsCommitted"),
+            )
         logger.info("Bronze → Gold built, tested, and published to CKAN catalog.")
 
 
@@ -363,12 +332,11 @@ with DAG(
             task_display_name="Airbyte: Sync source → warehouse (Bronze)",
             python_callable=run_airbyte_oss_sync,
             op_kwargs={
-                "connection_id": AIRBYTE_CONNECTION_ID,
                 "poll_interval_seconds": 30,
                 "timeout_seconds": 7200,
             },
             doc_md=(
-                f"Triggers connection `{AIRBYTE_CONNECTION_ID}` via "
+                "Validates incremental append_dedup streams, then triggers "
                 "`POST /api/v1/connections/sync` on Airbyte OSS 0.63.x."
             ),
         )

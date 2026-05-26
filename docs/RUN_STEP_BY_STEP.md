@@ -106,7 +106,8 @@ docker compose up -d
    - **Drop tables with CASCADE: OFF**
 
 3. **Connection** `source -> dwh`  
-   - Connection ID (สำหรับ Airflow): `b84b53a7-abfa-4c29-9f6b-c663dd0f4283`  
+   - Connection ID (สำหรับ Airflow): คัดลอก UUID จาก Airbyte UI → ใส่ `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` ใน `airflow-platform/.env`
+   - Sync mode ต้องเป็น **incremental + append_dedup** (customers: `created_at`, orders: `order_date`) — ดู [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)  
    - Schedule: **Manual** (ให้ Airflow เป็นคนสั่ง sync)
 
 4. กด **Sync now** ครั้งแรก (หรือรอ Airflow ในขั้น 5)
