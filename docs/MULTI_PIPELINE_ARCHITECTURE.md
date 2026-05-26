@@ -24,11 +24,13 @@ airflow-platform/
       ckan_publish.py
 
 dbt-warehouse/
-  models/
-    staging/                       # PoC: flat layout + pipeline tag
-    intermediate/
-    marts/
-  # New source (recommended): models/pipelines/<pipeline_id>/...
+  models/pipelines/
+    sales_local_postgres/          # staging → intermediate → marts
+    sap_chemicals/
+  snapshots/pipelines/<pipeline_id>/
+  tests/pipelines/<pipeline_id>/
+  macros/                          # shared incremental, dedupe, prune
+  docs/MODEL_ORGANIZATION.md
 ```
 
 Docker mounts `./config` → `/opt/airflow/pipeline_config` (see `docker-compose.yml`).
@@ -61,15 +63,15 @@ Airbyte streams, dbt selectors, CKAN tables.
 
 ### 2. dbt
 
-1. Add source in `models/staging/_sources.yml` for the Bronze schema.
-2. Add models under `models/pipelines/<pipeline_id>/` (recommended) or tag existing folders:
+1. Create `models/pipelines/<pipeline_id>/` with `staging/_sources.yml`, `staging/stg_*.sql`, etc.
+2. Copy config block from an existing pipeline in `dbt_project.yml` and set tags:
    ```yaml
    # dbt_project.yml or model config
    tags: ["pipeline_hr_system"]
    ```
 3. Use selectors in pipeline YAML:
-   - `silver_run_select: "tag:pipeline_hr_system,staging+"`
-   - `gold_run_select: "tag:pipeline_hr_system,marts+"`
+   - `silver_run_select: "tag:pipeline_hr_system"`
+   - `gold_run_select: "tag:pipeline_hr_system"`
 
 Run locally: `dbt run --select tag:pipeline_hr_system` before enabling the DAG.
 

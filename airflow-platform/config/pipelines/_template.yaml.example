@@ -33,7 +33,7 @@ dbt:
   bronze_source: src_my_new_source
   freshness_select: "source:src_my_new_source"
   # Tag all models for this pipeline: pipeline_my_new_source (see dbt_project.yml + model tags)
-  silver_run_select: "tag:pipeline_my_new_source,staging+ tag:pipeline_my_new_source,intermediate+"
+  silver_run_select: "tag:pipeline_my_new_source"
   snapshots: []
   silver_test_select: "tag:pipeline_my_new_source,staging tag:pipeline_my_new_source,intermediate source:src_my_new_source"
   run_singular_tests: true

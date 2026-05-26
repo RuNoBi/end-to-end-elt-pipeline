@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: int_sap_sales_lines_enriched
+    description: >
+      Silver view — order lines joined to material and business partner attributes
+      before loading `fct_sap_sales_lines`.
+    columns:
+      - name: sales_order_item_key
+        tests:
+          - unique
+          - not_null

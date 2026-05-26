@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_sap_material
+    description: Silver — SAP material master from Bronze `src_sap_chemicals.sap_material`.
+    columns:
+      - name: material_number
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_sap_business_partner
+    description: Silver — SAP business partners (customers).
+    columns:
+      - name: partner_number
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_sap_sales_order
+    description: Silver — SAP sales order headers.
+    columns:
+      - name: sales_order_number
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_sap_sales_order_item
+    description: Silver — SAP sales order line items.
+    columns:
+      - name: sales_order_item_key
+        tests:
+          - unique
+          - not_null

@@ -4,10 +4,10 @@
 COMPOSE := docker compose --profile tools run --rm dbt
 PROJECT_DIR := /usr/app
 
-.PHONY: help build debug deps seed run run-full freshness snapshot test test-silver docs docs-serve clean parse
+.PHONY: help build debug deps seed run run-sales run-sap run-full freshness snapshot test test-silver test-sales test-sap docs docs-serve clean parse
 
 help:
-	@echo "Targets: build, deps, freshness, run, snapshot, test, test-silver, run-full, parse, docs, clean"
+	@echo "Targets: build, deps, freshness, run, run-sales, run-sap, snapshot, test, test-silver, run-full, parse, docs, clean"
 	@echo "Workflow: Airbyte sync -> make freshness -> make run -> make snapshot -> make test"
 
 build:
@@ -22,9 +22,15 @@ deps:
 seed:
 	$(COMPOSE) seed --profiles-dir $(PROJECT_DIR)
 
-# Incremental pipeline: silver staging → gold dims/facts/marts
+# All pipelines (Silver + Gold)
 run:
-	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select staging+ intermediate+ marts+
+	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sales_local_postgres tag:pipeline_sap_chemicals
+
+run-sales:
+	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sales_local_postgres
+
+run-sap:
+	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sap_chemicals
 
 freshness:
 	$(COMPOSE) source freshness --profiles-dir $(PROJECT_DIR)
@@ -32,7 +38,6 @@ freshness:
 snapshot:
 	$(COMPOSE) snapshot --profiles-dir $(PROJECT_DIR) --select snap_stg_customers
 
-# Full-refresh all models (use after large backfills or logic changes)
 run-full:
 	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --full-refresh
 
@@ -40,8 +45,15 @@ test:
 	$(COMPOSE) test --profiles-dir $(PROJECT_DIR)
 
 test-silver:
-	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select staging intermediate source:src_local_postgres
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select tag:medallion_silver
 	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select test_type:singular
+
+test-sales:
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sales_local_postgres source:src_local_postgres
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select assert_no_orphan_orders_in_silver
+
+test-sap:
+	$(COMPOSE) test --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sap_chemicals source:src_sap_chemicals
 
 parse:
 	DBT_TARGET=ci $(COMPOSE) parse --profiles-dir $(PROJECT_DIR)

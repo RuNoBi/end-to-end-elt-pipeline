@@ -1,3 +1,5 @@
+{{ config(tags=['pipeline_sales_local_postgres']) }}
+
 -- Fails if Silver orders reference customers missing from Silver customers (business rule).
 select
     o.order_id,

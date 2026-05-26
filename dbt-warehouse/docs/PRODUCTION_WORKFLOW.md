@@ -13,7 +13,7 @@ Trigger DAG elt_main_pipeline in Airflow (http://localhost:8080)
 2. dbt source freshness  → fail if Bronze older than SLA
 3. dbt run Silver        → silver.stg_* (+ prune deleted keys)
 4. dbt snapshot          → gold.snap_stg_customers (SCD2)
-5. dbt test Silver       → quality gate
+5. dbt test Silver       → quality gate (failures → `dbt_audit` schema)
 6. dbt run Gold          → dims / facts / marts
 7. dbt test Gold
 8. Monitor log           → run summary (even on failure)

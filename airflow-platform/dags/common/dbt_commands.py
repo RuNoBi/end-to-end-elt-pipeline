@@ -25,10 +25,10 @@ def _select_arg(selector: str | None) -> str:
 def build_dbt_commands(dbt_cfg: dict[str, Any]) -> dict[str, str]:
     """Return bash command strings keyed by task role."""
     freshness = dbt_cfg.get("freshness_select")
-    silver_run = dbt_cfg.get("silver_run_select", "staging+")
-    silver_test = dbt_cfg.get("silver_test_select", "staging")
-    gold_run = dbt_cfg.get("gold_run_select", "marts+")
-    gold_test = dbt_cfg.get("gold_test_select", "marts+")
+    silver_run = dbt_cfg.get("silver_run_select", "tag:medallion_silver")
+    silver_test = dbt_cfg.get("silver_test_select", "tag:medallion_silver")
+    gold_run = dbt_cfg.get("gold_run_select", "tag:gold")
+    gold_test = dbt_cfg.get("gold_test_select", "tag:gold")
 
     cmds = {
         "freshness": _PREAMBLE

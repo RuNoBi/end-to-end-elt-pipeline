@@ -2,43 +2,44 @@
 
 Docker-native dbt for `data_warehouse`: **Bronze (Airbyte) → Silver (dbt tables) → Gold (dimensional marts)**.
 
-Production pattern: Silver is **materialized as incremental tables**, not views on Bronze — Airbyte can sync **without CASCADE**.
+All transform models live under **`models/pipelines/<pipeline_id>/`** — see [models/pipelines/README.md](models/pipelines/README.md) and [docs/MODEL_ORGANIZATION.md](docs/MODEL_ORGANIZATION.md).
 
 ## Warehouse layout
 
 ```
 data_warehouse
 │
-├── src_local_postgres     ← Bronze (Airbyte only — no dbt views)
-│   ├── customers
-│   └── orders
+├── src_local_postgres     ← Bronze retail (Airbyte)
+├── src_sap_chemicals      ← Bronze SAP mock (Airbyte)
 │
-├── silver                 ← Silver (dbt-owned incremental TABLES)
-│   ├── stg_customers
-│   ├── stg_orders
-│   └── int_orders_enriched    (view on silver tables only)
-│
-└── gold
-    ├── dim_customer           (incremental)
-    ├── dim_date               (table)
-    ├── fct_orders             (incremental)
-    └── mart_sales_performance (table, rebuilt each run)
+├── silver                 ← Silver: stg_* tables + int_* views (all pipelines)
+├── gold                   ← Gold: dim_* / fct_* / mart_* (all pipelines)
+└── dbt_audit              ← Failed test rows only (not business data)
 ```
+
+## Pipelines
+
+| Pipeline | Folder | DAG |
+|----------|--------|-----|
+| Retail sales | `models/pipelines/sales_local_postgres/` | `elt_main_pipeline` |
+| SAP chemicals | `models/pipelines/sap_chemicals/` | `elt_sap_chemicals` |
 
 ## Workflow
 
-**Orchestrated:** Airflow DAG `elt_main_pipeline` (freshness → Silver → snapshot → tests → Gold).
+**Orchestrated:** Airflow (freshness → Silver → snapshot → tests → Gold).
 
-**Manual:** see [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md).
+**Manual:**
 
 ```bash
-make freshness && make run && make snapshot && make test-silver
-# then gold: make run --select marts+  OR full make test after full run
+make freshness
+make run-sales          # or: make run (both pipelines)
+make snapshot           # retail SCD2 only
+make test-sales         # or: make test-silver
 ```
 
 After large Airbyte reload: `make run-full`
 
-Local best practices: [../docs/BEST_PRACTICES_LOCAL.md](../docs/BEST_PRACTICES_LOCAL.md)
+Details: [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md)
 
 ## Prerequisites
 
@@ -55,29 +56,28 @@ make run-full   # first time
 
 | Task | Command |
 |------|---------|
-| Incremental pipeline | `make run` |
+| All pipelines | `make run` |
+| Retail only | `make run-sales` |
+| SAP only | `make run-sap` |
+| Silver tests | `make test-silver` |
 | Full rebuild | `make run-full` |
-| Tests | `make test` |
-| Docs | `make docs-serve` → http://localhost:8081 |
+| Lineage docs | `make docs-serve` → http://localhost:8081 |
 
-## Airbyte destination
+## Debug
 
-| Setting | Value |
-|---------|--------|
-| **Drop tables with CASCADE** | **OFF** (production default for this project) |
-| Schema | `src_local_postgres` |
-
-If you previously used CASCADE + views, run `make run-full` once after upgrading to table-based Silver.
+1. Open `models/pipelines/<pipeline_id>/README.md`
+2. Compare Bronze → `silver.stg_*` using compiled SQL in `target/compiled/...`
+3. Failed tests: `select * from dbt_audit.<test_table> limit 100;`
 
 ## Layer rules
 
 | Layer | Schema | Materialization | Owner |
 |-------|--------|-----------------|-------|
-| Bronze | `src_local_postgres` | Airbyte tables | Airbyte |
-| Silver | `silver` | Incremental **tables** | dbt |
+| Bronze | `src_*` | Airbyte tables | Airbyte |
+| Silver | `silver` | `stg_*` incremental tables; `int_*` views | dbt |
 | Gold | `gold` | `dim_*` / `fct_*` incremental; `mart_*` table | dbt |
 
-**Consumers:** query `gold.*` only in production.
+**Consumers:** query `gold.*` in production.
 
 ## Example queries
 
@@ -86,14 +86,4 @@ select c.customer_name, f.order_amount
 from gold.fct_orders f
 join gold.dim_customer c using (customer_id)
 limit 100;
-
-select * from gold.mart_sales_performance
-order by total_revenue desc limit 20;
 ```
-
-## Performance (~1M rows)
-
-- Silver incremental + indexes on PK / `_airbyte_extracted_at`
-- Gold facts incremental; mart full table rebuild (fast aggregate)
-- `DBT_THREADS=4`–`8` in `.env`
-- See `analyses/performance_strategy.sql`
