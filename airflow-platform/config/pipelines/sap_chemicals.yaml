@@ -44,6 +44,8 @@ airbyte:
 
 dbt:
   bronze_source: src_sap_chemicals
+  silver_schema: silver_sap
+  gold_schema: gold_sap
   freshness_select: "source:src_sap_chemicals"
   silver_run_select: "tag:pipeline_sap_chemicals"
   snapshots: []

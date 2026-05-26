@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: dim_sap_material
+    description: Gold dimension — SAP material master (one row per material).
+    columns:
+      - name: material_number
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_sap_customer
+    description: Gold dimension — SAP sold-to business partners.
+    columns:
+      - name: partner_number
+        tests:
+          - not_null
+          - unique

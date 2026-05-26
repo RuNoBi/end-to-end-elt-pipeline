@@ -6,8 +6,8 @@ Warehouse Postgres (`warehouse-postgres`) stays private; CKAN holds a **publishe
 ## Architecture
 
 ```text
-gold.mart_sales_performance  ──Airflow publish──►  CKAN Datastore  ──►  UI / API
-gold.dim_customer
+gold_sales.mart_sales_performance  ──Airflow publish──►  CKAN Datastore  ──►  UI / API
+gold_sales.dim_customer
 ```
 
 | Container | Role |

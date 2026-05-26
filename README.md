@@ -221,14 +221,14 @@ SELECT
     c.customer_name,
     d.month_name,
     f.order_amount
-FROM gold.fct_orders f
-JOIN gold.dim_customer c USING (customer_id)
-JOIN gold.dim_date d ON f.order_date_key = d.date_key
+FROM gold_sales.fct_orders f
+JOIN gold_sales.dim_customer c USING (customer_id)
+JOIN gold_sales.dim_date d ON f.order_date_key = d.date_key
 LIMIT 100;
 
 -- Pre-aggregated mart
 SELECT *
-FROM gold.mart_sales_performance
+FROM gold_sales.mart_sales_performance
 ORDER BY total_revenue DESC
 LIMIT 20;
 ```

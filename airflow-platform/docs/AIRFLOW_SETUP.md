@@ -154,7 +154,7 @@ Dependencies: `extraction >> transformation >> monitoring`, and `dbt_run >> dbt_
 
 # Warehouse row counts (DBeaver / psql)
 docker exec de_poc_warehouse_postgres psql -U warehouse_admin -d data_warehouse -c \
-  "SELECT COUNT(*) FROM gold.fct_orders;"
+  "SELECT COUNT(*) FROM gold_sales.fct_orders;"
 
 # Airflow task logs: UI → DAG → Graph → Task → Log
 ```

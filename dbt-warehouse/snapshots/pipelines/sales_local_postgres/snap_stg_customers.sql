@@ -2,7 +2,6 @@
 
 {{
     config(
-        target_schema='gold',
         unique_key='customer_id',
         strategy='timestamp',
         updated_at='_airbyte_extracted_at',

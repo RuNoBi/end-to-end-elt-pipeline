@@ -1,46 +1,30 @@
 # Pipeline: `sales_local_postgres`
 
-Retail sales ELT — operational Postgres (`public.customers`, `public.orders`) → Airbyte → dbt → CKAN.
+Retail sales ELT — `public.customers/orders` → Bronze `src_local_postgres` → **`silver_sales` / `gold_sales`**.
 
 ## Lineage
 
 ```text
-src_local_postgres.customers  →  silver.stg_customers  →  gold.dim_customer
-                                                          gold.snap_stg_customers (SCD2)
-src_local_postgres.orders     →  silver.stg_orders
+src_local_postgres.customers  →  silver_sales.stg_customers  →  gold_sales.dim_customer
+                                                              →  gold_sales.snap_stg_customers
+src_local_postgres.orders     →  silver_sales.stg_orders
                                       ↓
-                               silver.int_orders_enriched (view)
+                               silver_sales.int_orders_enriched
                                       ↓
-                               gold.fct_orders  →  gold.mart_sales_performance
-                               gold.dim_date
+                               gold_sales.fct_orders  →  gold_sales.mart_sales_performance
+                               gold_sales.dim_date
 ```
-
-## Where cleaning happens
-
-| Step | File | What it does |
-|------|------|----------------|
-| Incremental window | `macros/get_raw_incremental_predicate.sql` | Read Bronze with lookback |
-| Dedupe | `macros/dedupe_airbyte_change_data.sql` | Latest row per business key |
-| Staging | `staging/stg_*.sql` | Cast, trim, rename, null filters |
-| Prune deletes | `macros/prune_keys_not_in_bronze.sql` | Post-hook on staging tables |
-| Enrich | `intermediate/int_orders_enriched.sql` | Segments, date keys |
-| Gold | `marts/**` | Dims, facts, mart aggregate |
 
 ## Run / test
 
 ```bash
 make run-sales
-make snapshot          # snap_stg_customers only (this pipeline)
+make snapshot
 make test-sales
 ```
 
-Airflow: `elt_main_pipeline` — config `airflow-platform/config/pipelines/sales_local_postgres.yaml`.
+Airflow: `elt_main_pipeline` — `DBT_TARGET=prod` in scheduler.
 
-## Common issues
+## CKAN
 
-| Symptom | Check |
-|---------|--------|
-| Stale Bronze | `dbt source freshness` / Airbyte sync task |
-| Orphan orders | `tests/pipelines/sales_local_postgres/assert_no_orphan_orders_in_silver.sql` |
-| Missing customers in dim | `stg_customers` then `dim_customer` incremental window |
-| Mart empty | `fct_orders` row count; `dim_customer` join |
+Published from **`gold_sales.*`** — see `airflow-platform/config/ckan/sales_local_postgres.yaml`.

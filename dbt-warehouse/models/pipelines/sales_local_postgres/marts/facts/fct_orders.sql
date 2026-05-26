@@ -3,7 +3,7 @@
         materialized='incremental',
         unique_key='order_id',
         incremental_strategy='delete+insert',
-        on_schema_change='sync_all_columns',
+        on_schema_change='append_new_columns',
         post_hook=[
             "create index if not exists {{ this.identifier }}_order_date_key_idx on {{ this }} (order_date_key)",
             "create index if not exists {{ this.identifier }}_customer_id_idx on {{ this }} (customer_id)",

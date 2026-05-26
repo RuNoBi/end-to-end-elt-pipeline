@@ -69,6 +69,37 @@ jobs:
       - name: Compile models
         run: dbt compile --profiles-dir .
 
+  dbt-sqlfluff:
+    name: dbt SQL lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt-warehouse
+    env:
+      DBT_TARGET: ci
+      DBT_WAREHOUSE_HOST: localhost
+      DBT_WAREHOUSE_PORT: "5432"
+      DBT_WAREHOUSE_USER: ci
+      DBT_WAREHOUSE_PASSWORD: ci
+      DBT_WAREHOUSE_DB: ci
+      DBT_WAREHOUSE_SCHEMA: ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt + sqlfluff
+        run: |
+          pip install "dbt-core==1.8.7" "dbt-postgres==1.8.2" sqlfluff sqlfluff-templater-dbt
+
+      - name: Install dbt packages
+        run: dbt deps --profiles-dir .
+
+      - name: Lint pipeline SQL
+        run: sqlfluff lint models/pipelines macros --dialect postgres
+
   airflow-dag-check:
     name: Airflow DAG syntax
     runs-on: ubuntu-latest

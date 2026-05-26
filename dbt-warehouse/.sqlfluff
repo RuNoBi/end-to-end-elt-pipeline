@@ -1,0 +1,21 @@
+[sqlfluff]
+dialect = postgres
+templater = dbt
+max_line_length = 120
+exclude_rules = layout.long_lines, structure.using, convention.casing
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indented_ctes = true
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .
+profile = de_poc_warehouse
+target = ci
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = lower

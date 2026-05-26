@@ -1,0 +1,42 @@
+selectors:
+  - name: retail_pipeline
+    description: Retail sales — full Silver → Gold for pipeline sales_local_postgres
+    definition:
+      method: tag
+      value: pipeline_sales_local_postgres
+
+  - name: sap_pipeline
+    description: SAP chemicals — full Silver → Gold for pipeline sap_chemicals
+    definition:
+      method: tag
+      value: pipeline_sap_chemicals
+
+  - name: silver_all
+    description: All Silver layers (staging tables + intermediate views)
+    definition:
+      method: tag
+      value: medallion_silver
+
+  - name: gold_all
+    description: All Gold layers (dimensions, facts, marts)
+    definition:
+      method: tag
+      value: gold
+
+  - name: retail_silver
+    description: Retail Silver only (staging + intermediate)
+    definition:
+      intersection:
+        - method: tag
+          value: pipeline_sales_local_postgres
+        - method: tag
+          value: medallion_silver
+
+  - name: sap_silver
+    description: SAP Silver only (staging + intermediate)
+    definition:
+      intersection:
+        - method: tag
+          value: pipeline_sap_chemicals
+        - method: tag
+          value: medallion_silver

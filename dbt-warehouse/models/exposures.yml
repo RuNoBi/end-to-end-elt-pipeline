@@ -1,0 +1,50 @@
+version: 2
+
+exposures:
+  - name: ckan_retail_sales_catalog
+    label: CKAN Retail Sales Catalog
+    type: application
+    maturity: high
+    url: http://localhost:5000/group/retail-sales
+    description: >
+      Open-data catalog (CKAN) for retail Gold tables in schema gold_sales.
+      Published by Airflow task after dbt Gold tests pass.
+    depends_on:
+      - ref('mart_sales_performance')
+      - ref('dim_customer')
+      - ref('dim_date')
+      - ref('fct_orders')
+    owner:
+      name: data-engineering
+
+  - name: ckan_sap_chemicals_catalog
+    label: CKAN SAP Chemicals Catalog
+    type: application
+    maturity: high
+    url: http://localhost:5000/group/sap-chemicals
+    description: >
+      Open-data catalog for SAP chemical sales Gold tables in schema gold_sap.
+    depends_on:
+      - ref('mart_sap_chemical_sales_performance')
+      - ref('dim_sap_material')
+      - ref('dim_sap_customer')
+      - ref('fct_sap_sales_lines')
+    owner:
+      name: data-engineering
+
+  - name: airflow_elt_orchestration
+    label: Airflow ELT Pipelines
+    type: application
+    maturity: high
+    url: http://localhost:8080
+    description: >
+      Scheduled ELT — Airbyte sync, dbt freshness, Silver gate, Gold build, CKAN publish.
+    depends_on:
+      - source('src_local_postgres', 'customers')
+      - source('src_local_postgres', 'orders')
+      - source('src_sap_chemicals', 'sap_material')
+      - source('src_sap_chemicals', 'sap_business_partner')
+      - source('src_sap_chemicals', 'sap_sales_order')
+      - source('src_sap_chemicals', 'sap_sales_order_item')
+    owner:
+      name: data-engineering

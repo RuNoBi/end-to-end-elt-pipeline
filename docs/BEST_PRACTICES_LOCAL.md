@@ -50,7 +50,7 @@ Airbyte
 | Mechanism | File |
 |-----------|------|
 | **Prune Silver keys** not in Bronze | `macros/prune_keys_not_in_bronze.sql` + post_hook on `stg_orders` / `stg_customers` |
-| **Prune Gold facts** not in Silver | post_hook on `gold.fct_orders` |
+| **Prune Gold facts** not in Silver | post_hook on `gold_sales.fct_orders` |
 
 After you **revert bad drill data** in source, the next `dbt run Silver` removes orphan keys automatically (no manual DELETE in warehouse for normal cases).
 
@@ -69,7 +69,7 @@ After you **revert bad drill data** in source, the next `dbt run Silver` removes
 
 | Test | Purpose |
 |------|---------|
-| `tests/singular/assert_no_orphan_orders_in_silver.sql` | Business rule: every Silver order has a Silver customer |
+| `tests/pipelines/sales_local_postgres/assert_no_orphan_orders_in_silver.sql` | Business rule: every Silver order has a Silver customer |
 | Existing schema tests | Still on sources, staging, marts |
 
 ---

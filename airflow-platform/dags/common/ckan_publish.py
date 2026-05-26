@@ -31,7 +31,7 @@ GOLD_PUBLICATIONS: list[dict[str, str]] = [
         "package_name": "sales-performance-mart",
         "package_title": "Sales Performance Mart",
         "resource_name": "mart_sales_performance",
-        "schema": "gold",
+        "schema": "gold_sales",
         "table": "mart_sales_performance",
         "description": (
             "Monthly sales KPIs by customer, segment, and order status "
@@ -44,7 +44,7 @@ GOLD_PUBLICATIONS: list[dict[str, str]] = [
         "package_name": "customer-dimension",
         "package_title": "Customer Dimension",
         "resource_name": "dim_customer",
-        "schema": "gold",
+        "schema": "gold_sales",
         "table": "dim_customer",
         "description": "Conformed customer dimension — current attributes (dbt Gold `dim_customer`).",
         "primary_key": "customer_id",
@@ -55,7 +55,7 @@ GOLD_PUBLICATIONS: list[dict[str, str]] = [
         "package_name": "date-dimension",
         "package_title": "Date Dimension",
         "resource_name": "dim_date",
-        "schema": "gold",
+        "schema": "gold_sales",
         "table": "dim_date",
         "description": (
             "Calendar dimension for order dates (dbt Gold `dim_date`) — year, quarter, month, week."
@@ -67,7 +67,7 @@ GOLD_PUBLICATIONS: list[dict[str, str]] = [
         "package_name": "orders-fact",
         "package_title": "Orders Fact",
         "resource_name": "fct_orders",
-        "schema": "gold",
+        "schema": "gold_sales",
         "table": "fct_orders",
         "description": (
             "Order fact table at order grain (dbt Gold `fct_orders`). "

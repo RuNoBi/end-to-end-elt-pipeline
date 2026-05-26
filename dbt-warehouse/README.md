@@ -1,89 +1,56 @@
-# dbt Warehouse — Enterprise Medallion Architecture
+# dbt Warehouse — Production Medallion Architecture
 
-Docker-native dbt for `data_warehouse`: **Bronze (Airbyte) → Silver (dbt tables) → Gold (dimensional marts)**.
-
-All transform models live under **`models/pipelines/<pipeline_id>/`** — see [models/pipelines/README.md](models/pipelines/README.md) and [docs/MODEL_ORGANIZATION.md](docs/MODEL_ORGANIZATION.md).
+Docker-native dbt for `data_warehouse`: **Bronze (Airbyte) → Silver (dbt) → Gold (dbt)** with **per-pipeline Postgres schemas**.
 
 ## Warehouse layout
 
 ```
 data_warehouse
-│
-├── src_local_postgres     ← Bronze retail (Airbyte)
-├── src_sap_chemicals      ← Bronze SAP mock (Airbyte)
-│
-├── silver                 ← Silver: stg_* tables + int_* views (all pipelines)
-├── gold                   ← Gold: dim_* / fct_* / mart_* (all pipelines)
-└── dbt_audit              ← Failed test rows only (not business data)
+├── src_local_postgres / src_sap_chemicals   ← Bronze (Airbyte)
+├── silver_sales / silver_sap                ← Silver (stg_* tables, int_* views)
+├── gold_sales / gold_sap                    ← Gold (dim_*, fct_*, mart_*)
+└── dbt_audit                                ← test failures (dev/ci only)
 ```
 
 ## Pipelines
 
-| Pipeline | Folder | DAG |
-|----------|--------|-----|
-| Retail sales | `models/pipelines/sales_local_postgres/` | `elt_main_pipeline` |
-| SAP chemicals | `models/pipelines/sap_chemicals/` | `elt_sap_chemicals` |
+| Pipeline | Folder | Silver | Gold | DAG |
+|----------|--------|--------|------|-----|
+| Retail | `models/pipelines/sales_local_postgres/` | `silver_sales` | `gold_sales` | `elt_main_pipeline` |
+| SAP | `models/pipelines/sap_chemicals/` | `silver_sap` | `gold_sap` | `elt_sap_chemicals` |
 
-## Workflow
-
-**Orchestrated:** Airflow (freshness → Silver → snapshot → tests → Gold).
-
-**Manual:**
+## Quick start
 
 ```bash
-make freshness
-make run-sales          # or: make run (both pipelines)
-make snapshot           # retail SCD2 only
-make test-sales         # or: make test-silver
-```
-
-After large Airbyte reload: `make run-full`
-
-Details: [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md)
-
-## Prerequisites
-
-```bash
-docker network create de_poc_network 2>/dev/null || true
-cd ../warehouse-postgres && docker compose up -d
-cd ../dbt-warehouse
-cp .env.example .env
+cp .env.example .env   # DBT_TARGET=dev
 make build && make deps
-make run-full   # first time
+make run-full          # first time or after schema change
+make snapshot && make test-silver
 ```
+
+Airflow uses **`DBT_TARGET=prod`** (no persisted test-failure tables).
 
 ## Commands
 
 | Task | Command |
 |------|---------|
 | All pipelines | `make run` |
-| Retail only | `make run-sales` |
-| SAP only | `make run-sap` |
-| Silver tests | `make test-silver` |
-| Full rebuild | `make run-full` |
-| Lineage docs | `make docs-serve` → http://localhost:8081 |
+| Retail / SAP | `make run-sales` / `make run-sap` |
+| Selector | `dbt run --selector retail_pipeline` |
+| Lineage + exposures | `make docs-serve` → http://localhost:8081 |
+| SQL lint | `make lint` (requires sqlfluff) |
 
-## Debug
+## Consumers
 
-1. Open `models/pipelines/<pipeline_id>/README.md`
-2. Compare Bronze → `silver.stg_*` using compiled SQL in `target/compiled/...`
-3. Failed tests: `select * from dbt_audit.<test_table> limit 100;`
-
-## Layer rules
-
-| Layer | Schema | Materialization | Owner |
-|-------|--------|-----------------|-------|
-| Bronze | `src_*` | Airbyte tables | Airbyte |
-| Silver | `silver` | `stg_*` incremental tables; `int_*` views | dbt |
-| Gold | `gold` | `dim_*` / `fct_*` incremental; `mart_*` table | dbt |
-
-**Consumers:** query `gold.*` in production.
-
-## Example queries
+Query **`gold_sales.*`** or **`gold_sap.*`** — not Silver. CKAN publish configs use the same schemas.
 
 ```sql
-select c.customer_name, f.order_amount
-from gold.fct_orders f
-join gold.dim_customer c using (customer_id)
-limit 100;
+select * from gold_sales.mart_sales_performance order by total_revenue desc limit 20;
+select * from gold_sap.mart_sap_chemical_sales_performance limit 20;
 ```
+
+## Docs
+
+- [docs/MODEL_ORGANIZATION.md](docs/MODEL_ORGANIZATION.md) — conventions, targets, migration
+- [docs/PRODUCTION_WORKFLOW.md](docs/PRODUCTION_WORKFLOW.md) — Airflow order
+- [models/pipelines/README.md](models/pipelines/README.md) — per-pipeline debug checklist

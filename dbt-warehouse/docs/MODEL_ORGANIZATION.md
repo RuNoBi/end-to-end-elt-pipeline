@@ -2,47 +2,64 @@
 
 ## Principles
 
-1. **One folder per pipeline** — matches Airflow `config/pipelines/<pipeline_id>.yaml` and dbt tag `pipeline_<pipeline_id>`.
-2. **Medallion inside each pipeline** — `staging` → `intermediate` → `marts`; no shared top-level `models/staging/`.
-3. **Postgres schemas stay stable** — all Silver in `silver`, all Gold in `gold`; folder structure is for humans and CI, not extra DB schemas per pipeline.
-4. **Test failures isolated** — `dbt_audit` schema (`store_failures: true`), so `silver` lists only business tables/views.
-5. **Global model names** — `ref('stg_orders')` works project-wide; use tags/selectors to scope runs.
+1. **One folder per pipeline** — matches Airflow `config/pipelines/<pipeline_id>.yaml` and tag `pipeline_<pipeline_id>`.
+2. **Medallion inside each pipeline** — `staging` → `intermediate` → `marts`.
+3. **Separate Postgres schemas per pipeline** — no cross-pipeline clutter in DBeaver; ACL-ready.
+4. **Test failures in `dbt_audit`** — only when `DBT_TARGET` is `dev` or `ci` (disabled in `prod`).
+5. **Exposures** — `models/exposures.yml` links Gold marts to CKAN / Airflow consumers.
+6. **Selectors** — `selectors.yml` for repeatable `--selector retail_pipeline` runs.
+
+## Schema map
+
+| Pipeline | Silver schema | Gold schema | Bronze |
+|----------|---------------|-------------|--------|
+| `sales_local_postgres` | `silver_sales` | `gold_sales` | `src_local_postgres` |
+| `sap_chemicals` | `silver_sap` | `gold_sap` | `src_sap_chemicals` |
+| Test audit (dev/ci) | — | — | `dbt_audit` |
 
 ## Repository layout
 
 ```text
 dbt-warehouse/
-├── models/pipelines/
-│   ├── README.md
-│   ├── sales_local_postgres/
-│   └── sap_chemicals/
-├── macros/                    # shared: dedupe, incremental, prune
-├── snapshots/pipelines/       # per-pipeline SCD2 (if any)
-├── tests/pipelines/           # singular / custom SQL tests
-├── analyses/                  # ad-hoc SQL, not deployed
-└── dbt_project.yml            # layer defaults per pipeline
+├── models/pipelines/<pipeline_id>/
+├── models/exposures.yml
+├── selectors.yml
+├── snapshots/pipelines/<pipeline_id>/
+├── tests/pipelines/<pipeline_id>/
+├── macros/
+└── dbt_project.yml
 ```
 
-## Debugging production issues
+## Targets (`profiles.yml`)
 
-| Layer | Schema | What to open first |
-|-------|--------|-------------------|
-| Bronze | `src_*` | Airbyte connection + `_sources.yml` freshness |
-| Silver table | `silver` | `pipelines/<id>/staging/stg_*.sql` |
-| Silver view | `silver` | `pipelines/<id>/intermediate/int_*.sql` |
-| Gold | `gold` | `pipelines/<id>/marts/**` |
-| Failed test | `dbt_audit` | Airflow `dbt_test_*` log → failing test name |
+| Target | Use case | `store_failures` |
+|--------|----------|------------------|
+| `dev` | Local `make run` | yes → `dbt_audit` |
+| `prod` | Airflow scheduled ELT | no |
+| `ci` | GitHub Actions | yes → `dbt_audit` |
 
-Compiled SQL after `dbt compile` or a failed run:
+Set in `.env`: `DBT_TARGET=dev` (local) or `DBT_TARGET=prod` (Airflow).
 
-```text
-target/compiled/de_poc_warehouse/models/pipelines/<pipeline_id>/...
+## Debugging
+
+| Layer | Where to look |
+|-------|----------------|
+| Bronze | `src_*` + `staging/_sources.yml` |
+| Silver | `silver_<domain>.stg_*` / `int_*` |
+| Gold | `gold_<domain>.*` |
+| Failed test (dev) | `dbt_audit.*` |
+| Compiled SQL | `target/compiled/.../pipelines/<id>/` |
+
+## Schema migration (one-time)
+
+```bash
+make run-full
+# then in DBeaver: analyses/migration_per_pipeline_schemas.sql
 ```
 
-## Adding a new pipeline
+## Adding a pipeline
 
-1. Create `models/pipelines/<pipeline_id>/` with `staging/`, `intermediate/`, `marts/`.
-2. Add a block under `models.de_poc_warehouse.pipelines` in `dbt_project.yml` (copy an existing pipeline).
-3. Add `airflow-platform/config/pipelines/<pipeline_id>.yaml` with `dbt.silver_run_select: "tag:pipeline_<pipeline_id>"`.
-4. Register DAG in `elt_pipelines.py` if using the factory pattern.
-5. Document in `models/pipelines/<pipeline_id>/README.md`.
+1. `models/pipelines/<pipeline_id>/` + README
+2. Vars + config block in `dbt_project.yml` (`schema_silver_*`, `schema_gold_*`)
+3. `airflow-platform/config/pipelines/<id>.yaml` + CKAN yaml with matching `gold_*` schema
+4. Entry in `macros/create_medallion_schemas.sql` vars list (via new `var()` entries)

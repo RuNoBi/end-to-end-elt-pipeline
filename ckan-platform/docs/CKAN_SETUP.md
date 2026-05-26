@@ -96,8 +96,8 @@ Trigger **`elt_main_pipeline`** in Airflow. After success:
 
 | CKAN dataset | Warehouse table | Notes |
 |--------------|-----------------|-------|
-| `sales-performance-mart` | `gold.mart_sales_performance` | Primary BI mart |
-| `customer-dimension` | `gold.dim_customer` | Row limit via `CKAN_PUBLISH_MAX_ROWS` |
+| `sales-performance-mart` | `gold_sales.mart_sales_performance` | Primary BI mart |
+| `customer-dimension` | `gold_sales.dim_customer` | Row limit via `CKAN_PUBLISH_MAX_ROWS` |
 
 To add tables, edit `airflow-platform/dags/common/ckan_publish.py` → `GOLD_PUBLICATIONS`.
 

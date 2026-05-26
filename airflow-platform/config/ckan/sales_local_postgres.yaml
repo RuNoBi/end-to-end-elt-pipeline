@@ -4,7 +4,7 @@ publications:
   - package_name: sales-performance-mart
     package_title: Sales Performance Mart
     resource_name: mart_sales_performance
-    schema: gold
+    schema: gold_sales
     table: mart_sales_performance
     description: Monthly sales KPIs by customer, segment, and order status.
     primary_key: customer_id,order_month,order_status,order_value_segment
@@ -16,7 +16,7 @@ publications:
   - package_name: customer-dimension
     package_title: Customer Dimension
     resource_name: dim_customer
-    schema: gold
+    schema: gold_sales
     table: dim_customer
     description: Conformed customer dimension — current attributes.
     primary_key: customer_id
@@ -29,7 +29,7 @@ publications:
   - package_name: date-dimension
     package_title: Date Dimension
     resource_name: dim_date
-    schema: gold
+    schema: gold_sales
     table: dim_date
     description: Calendar dimension for order dates.
     primary_key: date_key
@@ -41,7 +41,7 @@ publications:
   - package_name: orders-fact
     package_title: Orders Fact
     resource_name: fct_orders
-    schema: gold
+    schema: gold_sales
     table: fct_orders
     description: Order fact (catalog sample; full history in warehouse).
     primary_key: order_id

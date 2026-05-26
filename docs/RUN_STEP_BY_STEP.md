@@ -127,8 +127,8 @@ make test        # optional
 ตรวจใน DBeaver (`localhost:5434`):
 
 ```sql
-SELECT COUNT(*) FROM gold.fct_orders;
-SELECT COUNT(*) FROM gold.mart_sales_performance;
+SELECT COUNT(*) FROM gold_sales.fct_orders;
+SELECT COUNT(*) FROM gold_sales.mart_sales_performance;
 ```
 
 รันประจำหลัง Airbyte sync (manual):

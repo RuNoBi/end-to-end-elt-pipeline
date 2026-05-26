@@ -5,26 +5,44 @@ models:
     description: >
       Gold fact — one row per order (transaction grain).
       Foreign keys: customer_id → dim_customer, order_date_key → dim_date.
+    config:
+      contract:
+        enforced: true
+      on_schema_change: append_new_columns
     columns:
       - name: order_id
+        data_type: bigint
         tests:
           - unique
           - not_null
       - name: customer_id
+        data_type: bigint
         tests:
           - not_null
           - relationships:
               to: ref('dim_customer')
               field: customer_id
+      - name: order_date
+        data_type: timestamp with time zone
       - name: order_date_key
+        data_type: date
         tests:
           - not_null
           - relationships:
               to: ref('dim_date')
               field: date_key
       - name: order_amount
+        data_type: numeric
         tests:
           - not_null
           - dbt_utils.accepted_range:
               min_value: 0
               inclusive: true
+      - name: order_status
+        data_type: text
+      - name: order_value_segment
+        data_type: text
+      - name: last_extracted_at
+        data_type: timestamp with time zone
+      - name: dbt_updated_at
+        data_type: timestamp with time zone

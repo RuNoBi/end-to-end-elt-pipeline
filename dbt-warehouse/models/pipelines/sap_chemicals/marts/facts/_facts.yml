@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: fct_sap_sales_lines
+    description: Gold fact — one row per SAP sales order line item.
+    columns:
+      - name: sales_order_item_key
+        tests:
+          - not_null
+          - unique
