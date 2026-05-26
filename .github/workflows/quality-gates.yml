@@ -10,6 +10,20 @@ jobs:
   dbt-parse:
     name: dbt parse & compile
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: dbt-warehouse
@@ -29,8 +43,22 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
       - name: Install dbt
         run: pip install "dbt-core==1.8.7" "dbt-postgres==1.8.2"
+
+      - name: Wait for Postgres service
+        run: |
+          for i in {1..30}; do
+            pg_isready -h "${DBT_WAREHOUSE_HOST}" -p "${DBT_WAREHOUSE_PORT}" -U "${DBT_WAREHOUSE_USER}" && exit 0
+            sleep 2
+          done
+          echo "Postgres service did not become ready in time"
+          exit 1
+        env:
+          PGPASSWORD: ci
 
       - name: Install packages
         run: dbt deps --profiles-dir .
