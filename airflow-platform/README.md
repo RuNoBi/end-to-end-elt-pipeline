@@ -26,7 +26,7 @@ docker compose up -d
 
 Login: credentials from `.env` (`AIRFLOW_ADMIN_USERNAME` / `AIRFLOW_ADMIN_PASSWORD`).
 
-Enable DAG **`elt_main_pipeline`** in the UI, then trigger manually or wait for schedule (`0 7 * * *` UTC).
+Enable DAG **`elt_main_pipeline`** in the UI, then trigger manually or wait for schedule (**11:00 ICT** daily, `0 11 * * *` with `Asia/Bangkok` timezone).
 
 Full setup guide: [docs/AIRFLOW_SETUP.md](docs/AIRFLOW_SETUP.md)
 

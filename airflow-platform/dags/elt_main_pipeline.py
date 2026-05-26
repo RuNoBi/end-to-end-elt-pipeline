@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
+import pendulum
 import requests
 from airflow import DAG
 from airflow.exceptions import AirflowException
@@ -27,6 +28,9 @@ from common.ckan_publish import publish_gold_to_ckan
 logger = logging.getLogger(__name__)
 
 DAG_ID = "elt_main_pipeline"
+# Daily 11:00 Thailand (ICT). Set AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Bangkok in compose.
+DAG_TIMEZONE = "Asia/Bangkok"
+DAG_SCHEDULE = "0 11 * * *"
 
 
 def _require_airbyte_connection_id() -> str:
@@ -319,8 +323,8 @@ with DAG(
     dag_id=DAG_ID,
     description="End-to-end ELT: Airbyte → dbt Gold → CKAN catalog → monitor",
     default_args=DEFAULT_ARGS,
-    schedule_interval="0 7 * * *",
-    start_date=datetime(2026, 1, 1),
+    schedule=DAG_SCHEDULE,
+    start_date=pendulum.datetime(2026, 1, 1, tz=DAG_TIMEZONE),
     catchup=False,
     tags=["elt", "airbyte", "dbt", "medallion", "production-poc"],
     max_active_runs=1,

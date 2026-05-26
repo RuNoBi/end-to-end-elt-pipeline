@@ -244,7 +244,7 @@ cd ../ckan-platform && docker compose start
 cd ../airflow-platform && docker compose start
 ```
 
-จากนั้น Trigger DAG `elt_main_pipeline` หรือรอ schedule `07:00 UTC`
+จากนั้น Trigger DAG `elt_main_pipeline` หรือรอ schedule **11:00 น. (เวลาไทย)** ทุกวัน
 
 ---
 

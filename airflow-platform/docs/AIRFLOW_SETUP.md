@@ -245,7 +245,7 @@ default_args = {
 ## Daily workflow (with Airflow)
 
 1. Leave Airbyte connection schedule **Manual** (Airflow owns scheduling)
-2. Airflow runs daily at `07:00 UTC` or trigger manually
+2. Airflow runs daily at **11:00 Thailand (Asia/Bangkok)** or trigger manually
 3. On failure: check task logs → fix → clear failed task → re-run
 
 Stop Airflow (data preserved):
