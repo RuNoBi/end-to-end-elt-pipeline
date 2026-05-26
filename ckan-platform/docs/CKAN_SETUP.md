@@ -7,7 +7,8 @@
 | **Separate catalog DB** | `ckan-db` — never mix with `data_warehouse` |
 | **Publish, not direct query** | Airflow copies Gold → CKAN Datastore after tests pass |
 | **Idempotent refresh** | `datastore_create(force=true)` + batched `datastore_upsert` each run |
-| **Aggregated marts first** | `mart_sales_performance` (not raw 1M `fct_orders`) |
+| **Aggregated marts first** | Large facts (`fct_orders`) published with row caps; full history stays in the warehouse |
+| **Gold tables in catalog** | `mart_sales_performance`, `dim_customer`, `dim_date`, `fct_orders` (see `ckan_publish.py` `GOLD_PUBLICATIONS`) |
 | **API token auth** | Sysadmin token in `.env` (not in git) |
 
 Production extensions: DCAT metadata, approval workflow, private orgs, object storage for large files, CKAN harvest from object store.
@@ -27,7 +28,7 @@ docker compose ps   # all healthy
 UI: http://localhost:5001  
 Login: `CKAN_SYSADMIN_NAME` / `CKAN_SYSADMIN_PASSWORD` from `.env`
 
-Branding: **UBE Group Thailand** theme (`ckanext-ube_theme`) — logo, colors, homepage hero.
+Branding: **UBE Group Thailand** theme (`ckanext-ube_theme`) — blue/white portal layout (data.go.th style): hero search, stats, featured datasets, custom header/footer (no “Powered by CKAN”). After theme changes: `docker compose build ckan && docker compose up -d ckan`.
 
 ---
 

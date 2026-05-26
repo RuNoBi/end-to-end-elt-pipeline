@@ -1,0 +1,8 @@
+{% ckan_extends "package/read_base.html" %}
+
+{# Single preview CTA lives in dataset hero — avoid duplicate top-right button #}
+{% block content_action %}
+  {% if h.check_access('package_update', {'id': pkg.id }) %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}

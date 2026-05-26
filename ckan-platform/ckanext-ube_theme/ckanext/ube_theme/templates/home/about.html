@@ -1,0 +1,21 @@
+{% ckan_extends "home/about.html" %}
+
+{% block about %}
+  <div class="ube-about">
+    <h1>{{ _('About this catalog') }}</h1>
+    <p>
+      {{ _('This portal publishes curated Gold-layer datasets from the UBE Group Thailand data platform.') }}
+    </p>
+    <ul>
+      <li>{{ _('Ingestion: Airbyte (Bronze)') }}</li>
+      <li>{{ _('Transformation: dbt (Silver / Gold)') }}</li>
+      <li>{{ _('Orchestration: Apache Airflow') }}</li>
+      <li>{{ _('Publication: CKAN Datastore with Data Explorer previews') }}</li>
+    </ul>
+    <p>
+      <a class="btn btn-primary" href="{{ h.url_for('organization.read', id=h.ube_org_id()) }}">
+        {{ _('Browse the UBE data catalog') }}
+      </a>
+    </p>
+  </div>
+{% endblock %}

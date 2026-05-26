@@ -51,6 +51,32 @@ GOLD_PUBLICATIONS: list[dict[str, str]] = [
         "max_rows": "50000",
         "frequency": "daily",
     },
+    {
+        "package_name": "date-dimension",
+        "package_title": "Date Dimension",
+        "resource_name": "dim_date",
+        "schema": "gold",
+        "table": "dim_date",
+        "description": (
+            "Calendar dimension for order dates (dbt Gold `dim_date`) — year, quarter, month, week."
+        ),
+        "primary_key": "date_key",
+        "frequency": "daily",
+    },
+    {
+        "package_name": "orders-fact",
+        "package_title": "Orders Fact",
+        "resource_name": "fct_orders",
+        "schema": "gold",
+        "table": "fct_orders",
+        "description": (
+            "Order fact table at order grain (dbt Gold `fct_orders`). "
+            "Catalog shows a capped row sample; use the warehouse for full history."
+        ),
+        "primary_key": "order_id",
+        "max_rows": "100000",
+        "frequency": "daily",
+    },
 ]
 
 PG_TO_CKAN_TYPE: dict[str, str] = {
@@ -182,9 +208,10 @@ def _ckan_preflight() -> None:
     )
     if probe is _AUTH_FAILED:
         raise AirflowException(
-            "CKAN API token cannot edit the organization. Run: cd ckan-platform && "
-            "./scripts/bootstrap-ckan.sh then copy CKAN_API_TOKEN into airflow-platform/.env "
-            "and restart airflow-scheduler."
+            "CKAN API token cannot edit the organization (stale or out of sync). "
+            "Run: cd ckan-platform && ./scripts/bootstrap-ckan.sh "
+            "(syncs airflow-platform/.env) then: "
+            "cd airflow-platform && docker compose up -d airflow-scheduler"
         )
 
 

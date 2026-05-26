@@ -1,0 +1,21 @@
+{% ckan_extends "snippets/organization.html" %}
+
+{% block image %}
+  <div class="image ube-org-sidebar-logo">
+    <a href="{{ h.url_for(organization.type + '.read', id=organization.name) }}">
+      <img
+        src="/images/ube-logo.png"
+        alt="{{ organization.title or organization.name }}"
+        width="200"
+      />
+    </a>
+  </div>
+{% endblock %}
+
+{% block description %}
+  {% if organization.description %}
+    <p class="description">{{ h.markdown_extract(organization.description, 180) }}</p>
+  {% else %}
+    <p class="description">{{ _('Official Gold datamarts from the UBE enterprise data platform.') }}</p>
+  {% endif %}
+{% endblock %}

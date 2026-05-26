@@ -47,3 +47,6 @@ set_kv "$CK_ENV" CKAN_SITE_TITLE "UBE Group Thailand — Data Catalog"
 set_kv "$CK_ENV" CKAN_SITE_DESCRIPTION "Enterprise Gold datamarts from the ELT platform (Airbyte, dbt, Airflow)."
 
 echo "Updated ${AF_ENV} and ${CK_ENV}"
+echo ""
+echo "Next: restart Airflow so the scheduler loads the synced token:"
+echo "  cd airflow-platform && docker compose up -d airflow-scheduler airflow-webserver"

@@ -1,0 +1,33 @@
+{% ckan_extends "snippets/package_item.html" %}
+
+{% block package_item %}
+  {% set title = package.title or package.name %}
+  {% set notes = h.markdown_extract(package.notes, extract_length=140) %}
+  {% set preview_url = h.ube_data_explorer_url(package.name) %}
+  <li class="ube-catalog-card {{ item_class or '' }}">
+    <article class="ube-catalog-card__inner">
+      <header class="ube-catalog-card__header">
+        <span class="ube-catalog-card__badge">Gold</span>
+        {% if package.metadata_modified %}
+          <span class="ube-catalog-card__time">{{ h.time_ago_from_timestamp(package.metadata_modified) }}</span>
+        {% endif %}
+      </header>
+      <h2 class="ube-catalog-card__title">
+        <a href="{{ h.url_for('%s.read' % package.type, id=package.name) }}">{{ title|truncate(80) }}</a>
+      </h2>
+      {% if notes %}
+        <p class="ube-catalog-card__notes">{{ notes }}</p>
+      {% endif %}
+      <footer class="ube-catalog-card__footer">
+        {% if preview_url %}
+          <a class="btn btn-primary btn-sm" href="{{ preview_url }}">
+            <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
+          </a>
+        {% endif %}
+        <a class="btn btn-outline-primary btn-sm" href="{{ h.url_for('%s.read' % package.type, id=package.name) }}">
+          {{ _('Details') }}
+        </a>
+      </footer>
+    </article>
+  </li>
+{% endblock %}

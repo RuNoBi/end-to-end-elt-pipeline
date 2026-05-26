@@ -1,0 +1,23 @@
+{% ckan_extends "package/snippets/resource_item.html" %}
+
+{% block resource_item_title %}
+  <div class="ube-resource-title">
+    <a class="heading" href="{{ url }}" title="{{ res.name or res.description }}">
+      {{ h.resource_display_name(res) | truncate(60) }}
+    </a>
+    <span class="ube-format-pill">{{ (res.format or 'TABLE')|upper }}</span>
+  </div>
+{% endblock %}
+
+{% block resource_item_description %}{% endblock %}
+
+{% block resource_item_explore %}
+  {% if not url_is_edit %}
+    {% set preview_url = h.ube_data_explorer_url(pkg.name, res.id) %}
+    {% if preview_url %}
+      <a class="btn btn-primary ube-resource-preview-btn" href="{{ preview_url }}">
+        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
+      </a>
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -65,8 +65,18 @@ fi
 export CKAN_API_TOKEN="${TOKEN}"
 "${ROOT}/scripts/configure-ube-catalog.sh"
 
+# Keep Airflow in sync (stale token after ckan-db recreate / bootstrap is the #1 publish failure).
+PATCH_SCRIPT="$(cd "${ROOT}/../scripts" && pwd)/patch-ckan-env.sh"
+if [[ -x "${PATCH_SCRIPT}" ]]; then
+  echo "Syncing token to airflow-platform/.env ..."
+  "${PATCH_SCRIPT}"
+fi
+
 echo ""
-echo "=== Add to airflow-platform/.env ==="
+echo "=== Restart Airflow (pick up new token) ==="
+echo "cd airflow-platform && docker compose up -d airflow-scheduler airflow-webserver"
+echo ""
+echo "=== airflow-platform/.env (synced) ==="
 echo "CKAN_URL=http://ckan:5000"
 echo "CKAN_API_TOKEN=${TOKEN}"
 echo "AIRFLOW_VAR_CKAN_API_TOKEN=${TOKEN}"

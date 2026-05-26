@@ -1,0 +1,49 @@
+{% ckan_extends "package/read.html" %}
+
+{% block primary_content_inner %}
+  {% set preview_url = h.ube_data_explorer_url(pkg.name) %}
+  {% if preview_url %}
+    <div class="ube-dataset-hero ube-dataset-hero--compact">
+      <a class="btn btn-primary btn-lg" href="{{ preview_url }}">
+        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview data') }}
+      </a>
+      {% if pkg.metadata_modified %}
+        <span class="ube-dataset-hero__updated">
+          {{ _('Updated') }} {{ h.time_ago_from_timestamp(pkg.metadata_modified) }}
+        </span>
+      {% endif %}
+    </div>
+  {% endif %}
+  {{ super() }}
+{% endblock %}
+
+{% block page_heading %}
+  {{ h.dataset_display_name(pkg) }}
+  {% if pkg.state.startswith('draft') %} [{{ _('Draft') }}]{% endif %}
+  {% if pkg.state == 'deleted' %} [{{ _('Deleted') }}]{% endif %}
+{% endblock %}
+
+{% block package_notes %}
+  {% if pkg.notes %}
+    <p class="ube-dataset-summary">{{ h.markdown_extract(h.get_translated(pkg, 'notes'), 160) }}</p>
+  {% endif %}
+{% endblock %}
+
+{% block package_resources %}
+  <section id="dataset-resources" class="resources ube-resources-section">
+    <h2>{{ _('Data') }}</h2>
+    {% if pkg.resources %}
+      <ul class="resource-list">
+        {% for resource in pkg.resources %}
+          {% snippet 'package/snippets/resource_item.html', pkg=pkg, res=resource, can_edit=h.check_access('package_update', {'id': pkg.id}) %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">{{ _('This dataset has no data') }}</p>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block package_tags %}{% endblock %}
+
+{% block package_additional_info %}{% endblock %}

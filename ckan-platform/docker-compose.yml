@@ -94,6 +94,7 @@ services:
       CKAN__PLUGINS: image_view text_view datatables_view datastore datapusher envvars ube_theme
       CKAN__SITE__TITLE: ${CKAN_SITE_TITLE:-UBE Group Thailand — Data Catalog}
       CKAN__SITE__DESCRIPTION: ${CKAN_SITE_DESCRIPTION:-Enterprise Gold datamarts from the ELT platform (Airbyte, dbt, Airflow).}
+      CKAN__UBE_ORG_ID: ${CKAN_ORGANIZATION:-ube-group-thailand}
       CKAN__VIEWS__DEFAULT_VIEWS: datatables_view
       CKAN__LOCALE__DEFAULT: en
       CKAN__LOCALE__UI__DEFAULT: en

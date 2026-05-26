@@ -1,0 +1,30 @@
+{% ckan_extends "organization/read.html" %}
+
+{% block groups_search_form %}
+  <div class="ube-org-banner">
+    <img src="/images/ube-logo.png" alt="" class="ube-org-banner__logo"/>
+    <div class="ube-org-banner__body">
+      <p class="ube-org-banner__eyebrow">{{ h.ube_company_name() }}</p>
+      <h2 class="ube-org-banner__title">{{ group_dict.display_name }}</h2>
+      {% if group_dict.description %}
+        <p>{{ h.markdown_extract(group_dict.description, 200) }}</p>
+      {% else %}
+        <p>{{ _('Browse Gold-layer datasets — open any card and click Preview for an instant table view.') }}</p>
+      {% endif %}
+    </div>
+    <div class="ube-org-banner__stats">
+      <span><strong>{{ page.item_count }}</strong> {{ _('datasets') }}</span>
+    </div>
+  </div>
+  {{ super() }}
+{% endblock %}
+
+{% block packages_list %}
+  {% if page.items %}
+    <ul class="ube-catalog-list list-unstyled">
+      {% for package in page.items %}
+        {% snippet 'snippets/package_item.html', package=package, item_class='ube-catalog-list__item' %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

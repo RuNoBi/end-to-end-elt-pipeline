@@ -67,13 +67,22 @@ def api(action: str, payload: dict, *, ok_if_exists: bool = False) -> dict | Non
     return body.get("result")
 
 
+logo_url = os.environ["CKAN_URL"].rstrip("/") + "/images/ube-logo.png"
 print(f"Ensuring organization {org} ...")
 if api(
     "organization_create",
-    {"name": org, "title": org_title, "notes": org_notes},
+    {
+        "name": org,
+        "title": org_title,
+        "notes": org_notes,
+        "image_url": logo_url,
+    },
     ok_if_exists=True,
 ) is None:
-    api("organization_patch", {"id": org, "title": org_title, "notes": org_notes})
+    api(
+        "organization_patch",
+        {"id": org, "title": org_title, "notes": org_notes, "image_url": logo_url},
+    )
 
 legacy = "de-poc-data"
 if org != legacy:

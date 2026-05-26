@@ -1,28 +1,238 @@
 {% ckan_extends "home/index.html" %}
 
-{% block featured_content %}
-  <div class="ube-hero">
-    <h1>UBE Group Thailand — Enterprise Data Catalog</h1>
-    <p>
-      Curated <strong>Gold datamarts</strong> from the ELT pipeline (Airbyte → dbt).
-      Open a dataset, then use <strong>Preview</strong> or <strong>Data Explorer</strong> to sample rows.
-    </p>
-    <p>
-      <span class="ube-badge">dbt Gold</span>
-      <span class="ube-badge">Datastore API</span>
-      <span class="ube-badge">Daily refresh</span>
-    </p>
-    <div class="ube-actions">
-      <a class="btn btn-primary" href="{{ h.url_for('organization.read', id='ube-group-thailand') }}">
-        Browse UBE datasets
-      </a>
-      <a class="btn btn-default" href="{{ h.url_for('dataset.search') }}">Search all datasets</a>
-    </div>
-  </div>
-  {{ super() }}
-{% endblock %}
+{% block primary_content %}
+  {% set stats = h.ube_catalog_stats() %}
+  {% set org = h.ube_org_id() %}
+  {% set featured = h.ube_featured_datasets(6) %}
 
-{% block styles %}
-  {{ super() }}
-  <link rel="stylesheet" href="/css/ube.css"/>
+  <div class="ube-home" role="main">
+    <section class="ube-hero-banner">
+      <div class="ube-hero-banner__pattern" aria-hidden="true"></div>
+      <div class="container">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-7">
+            <div class="ube-hero-banner__brand">
+              <img src="/images/ube-logo.png" alt="" width="200" height="40"/>
+              <span class="ube-hero-banner__company">{{ h.ube_company_name() }}</span>
+            </div>
+            <p class="ube-hero-banner__eyebrow">{{ _('Open Data Catalog') }}</p>
+            <h1 class="ube-hero-banner__title">{{ _('Enterprise data for everyone') }}</h1>
+            <p class="ube-hero-banner__lead">
+              {% if g.site_description %}
+                {{ g.site_description }}
+              {% else %}
+                {{ _('Discover curated Gold datamarts — preview and explore enterprise data in your browser.') }}
+              {% endif %}
+            </p>
+            <div class="ube-hero-banner__actions">
+              <a class="btn btn-light btn-lg" href="{{ h.url_for('organization.read', id=org) }}">
+                <i class="fa fa-th-large" aria-hidden="true"></i> {{ _('Browse catalog') }}
+              </a>
+              <a class="btn btn-outline-light btn-lg" href="{{ h.url_for('dataset.search') }}?q=organization:{{ org }}">
+                <i class="fa fa-search" aria-hidden="true"></i> {{ _('Search datasets') }}
+              </a>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="ube-hero-search-card">
+              <h2 class="ube-hero-search-card__title">{{ _('Search open data') }}</h2>
+              <p class="ube-hero-search-card__subtitle">{{ _('Find datasets, marts, and dimensions published by UBE Group Thailand.') }}</p>
+              <form action="{{ h.url_for('dataset.search') }}" method="get" class="ube-hero-search-form">
+                <input
+                  type="search"
+                  name="q"
+                  class="form-control form-control-lg"
+                  placeholder="{{ _('Keywords, dataset name…') }}"
+                  aria-label="{{ _('Search') }}"
+                />
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fa fa-search" aria-hidden="true"></i> {{ _('Search') }}
+                </button>
+              </form>
+              <div class="ube-hero-search-card__tags">
+                <span class="ube-hero-search-card__tags-label">{{ _('Popular') }}:</span>
+                <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=sales">sales</a>
+                <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=customer">customer</a>
+                <a class="ube-tag" href="{{ h.url_for('dataset.read', id='sales-performance-mart') }}">mart</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ube-stats">
+      <div class="container">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="ube-stat-card">
+              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-folder-open"></i></span>
+              <span class="ube-stat-card__value">{{ stats.datasets }}</span>
+              <span class="ube-stat-card__label">{{ _('Datasets') }}</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="ube-stat-card">
+              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-database"></i></span>
+              <span class="ube-stat-card__value">{{ stats.resources }}</span>
+              <span class="ube-stat-card__label">{{ _('Data resources') }}</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="ube-stat-card">
+              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-building"></i></span>
+              <span class="ube-stat-card__value">{{ stats.organizations }}</span>
+              <span class="ube-stat-card__label">{{ _('Publisher') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ube-section">
+      <div class="container">
+        <div class="ube-section__head">
+          <div>
+            <h2>{{ _('Featured datasets') }}</h2>
+            <p class="ube-section__subtitle">{{ _('Latest Gold-layer tables published from the warehouse') }}</p>
+          </div>
+          <a class="ube-section__link" href="{{ h.url_for('organization.read', id=org) }}">{{ _('View all') }} →</a>
+        </div>
+        {% if featured %}
+          <div class="row g-3">
+            {% for pkg in featured %}
+              <div class="col-md-6 col-lg-4">
+                <article class="ube-dataset-card">
+                  <div class="ube-dataset-card__top">
+                    <span class="ube-dataset-card__badge">{{ _('Gold') }}</span>
+                    {% if pkg.metadata_modified %}
+                      <span class="ube-dataset-card__time">{{ h.time_ago_from_timestamp(pkg.metadata_modified) }}</span>
+                    {% endif %}
+                  </div>
+                  <h3>
+                    <a href="{{ h.url_for('dataset.read', id=pkg.name) }}">
+                      {{ pkg.title or pkg.name }}
+                    </a>
+                  </h3>
+                  {% if pkg.notes %}
+                    <p>{{ h.markdown_extract(pkg.notes, 100) }}</p>
+                  {% endif %}
+                  <div class="ube-dataset-card__meta">
+                    <span><i class="fa fa-database" aria-hidden="true"></i>
+                      {{ (pkg.resources or [])|length }} {{ _('resources') }}</span>
+                  </div>
+                  <a class="btn btn-outline-primary btn-sm ube-dataset-card__btn" href="{{ h.url_for('dataset.read', id=pkg.name) }}">
+                    {{ _('Open dataset') }}
+                  </a>
+                </article>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ube-empty-state">
+            <i class="fa fa-inbox ube-empty-state__icon" aria-hidden="true"></i>
+            <p>{{ _('No datasets published yet. Run the Airflow publication task to load Gold marts.') }}</p>
+            <a class="btn btn-primary" href="{{ h.url_for('organization.read', id=org) }}">{{ _('Go to organization') }}</a>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="ube-section ube-section--muted">
+      <div class="container">
+        <div class="ube-section__head">
+          <div>
+            <h2>{{ _('Data domains') }}</h2>
+            <p class="ube-section__subtitle">{{ _('Jump to core business subject areas') }}</p>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6 col-lg-3">
+            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='sales-performance-mart') }}">
+              <span class="ube-domain-card__icon"><i class="fa fa-line-chart" aria-hidden="true"></i></span>
+              <div>
+                <h3>{{ _('Sales mart') }}</h3>
+                <p>{{ _('Monthly KPIs by customer and segment.') }}</p>
+                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
+              </div>
+            </a>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='customer-dimension') }}">
+              <span class="ube-domain-card__icon"><i class="fa fa-users" aria-hidden="true"></i></span>
+              <div>
+                <h3>{{ _('Customer') }}</h3>
+                <p>{{ _('dim_customer — conformed attributes.') }}</p>
+                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
+              </div>
+            </a>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='date-dimension') }}">
+              <span class="ube-domain-card__icon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+              <div>
+                <h3>{{ _('Date') }}</h3>
+                <p>{{ _('dim_date — calendar spine.') }}</p>
+                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
+              </div>
+            </a>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='orders-fact') }}">
+              <span class="ube-domain-card__icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></span>
+              <div>
+                <h3>{{ _('Orders') }}</h3>
+                <p>{{ _('fct_orders — order-level facts (sample).') }}</p>
+                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ube-section ube-section--pipeline">
+      <div class="container">
+        <div class="ube-pipeline">
+          <div class="ube-pipeline__item">
+            <span class="ube-pipeline__step">1</span>
+            <strong>Airbyte</strong>
+            <small>{{ _('Bronze ingest') }}</small>
+          </div>
+          <div class="ube-pipeline__item">
+            <span class="ube-pipeline__step">2</span>
+            <strong>dbt</strong>
+            <small>{{ _('Silver / Gold') }}</small>
+          </div>
+          <div class="ube-pipeline__item">
+            <span class="ube-pipeline__step">3</span>
+            <strong>Airflow</strong>
+            <small>{{ _('Orchestration') }}</small>
+          </div>
+          <div class="ube-pipeline__item ube-pipeline__item--active">
+            <span class="ube-pipeline__step">4</span>
+            <strong>CKAN</strong>
+            <small>{{ _('Open catalog') }}</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ube-section ube-section--cta">
+      <div class="container">
+        <div class="ube-cta-panel">
+          <div class="ube-cta-panel__logo">
+            <img src="/images/ube-logo.png" alt="" width="200" height="40"/>
+          </div>
+          <div class="ube-cta-panel__text">
+            <h2>{{ _('Ready to explore?') }}</h2>
+            <p>{{ _('Open any dataset and use Data Explorer to preview rows — no SQL client required.') }}</p>
+          </div>
+          <a class="btn btn-light btn-lg" href="{{ h.url_for('organization.read', id=org) }}">
+            {{ _('Open UBE catalog') }}
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
 {% endblock %}

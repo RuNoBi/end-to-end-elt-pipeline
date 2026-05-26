@@ -1,7 +1,53 @@
 {% ckan_extends "header.html" %}
 
+{% block header_account_container_content %}
+  <span class="ube-account-bar__tagline d-none d-lg-inline">{{ _('Enterprise Data Platform') }}</span>
+  {{ super() }}
+{% endblock %}
+
 {% block header_logo %}
-  <a class="logo" href="{{ h.url_for('home.index') }}" title="{{ _('Home') }}">
-    <img src="/images/ube-logo.png" alt="UBE Group Thailand Data Catalog" height="44"/>
+  <a class="logo ube-logo" href="{{ h.url_for('home.index') }}" title="{{ g.site_title }}">
+    <img
+      src="/images/ube-logo.png"
+      alt=""
+      class="ube-logo__img"
+    />
+    <span class="ube-logo__brand">
+      <span class="ube-logo__company">{{ h.ube_company_name() }}</span>
+      <span class="ube-logo__tagline">{{ _('Data Catalog') }}</span>
+    </span>
   </a>
+{% endblock %}
+
+{% block header_site_navigation_tabs %}
+  {% set org = h.ube_org_id() %}
+  <li class="nav-item{% if c.controller == 'home' and c.action == 'index' %} active{% endif %}">
+    <a class="nav-link" href="{{ h.url_for('home.index') }}">{{ _('Home') }}</a>
+  </li>
+  <li class="nav-item{% if c.controller == 'organization' %} active{% endif %}">
+    <a class="nav-link" href="{{ h.url_for('organization.read', id=org) }}">{{ _('Data catalog') }}</a>
+  </li>
+  <li class="nav-item{% if c.controller == 'dataset' %} active{% endif %}">
+    <a class="nav-link" href="{{ h.url_for('dataset.search') }}?q=organization:{{ org }}">{{ _('Datasets') }}</a>
+  </li>
+  <li class="nav-item{% if c.controller == 'home' and c.action == 'about' %} active{% endif %}">
+    <a class="nav-link" href="{{ h.url_for('home.about') }}">{{ _('About') }}</a>
+  </li>
+{% endblock %}
+
+{% block header_site_search %}
+  <form class="d-flex site-search ube-header-search" action="{{ h.url_for('dataset.search') }}" method="get">
+    <label class="d-none" for="field-sitewide-search">{{ _('Search datasets') }}</label>
+    <input
+      id="field-sitewide-search"
+      class="form-control"
+      type="search"
+      name="q"
+      placeholder="{{ _('Search open data…') }}"
+      aria-label="{{ _('Search datasets') }}"
+    />
+    <button class="btn btn-primary" type="submit" aria-label="{{ _('Search') }}">
+      <i class="fa fa-search" aria-hidden="true"></i>
+    </button>
+  </form>
 {% endblock %}
