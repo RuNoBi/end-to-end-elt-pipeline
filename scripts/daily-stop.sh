@@ -17,7 +17,7 @@ echo "Stopping Airbyte..."
 echo "Stopping Warehouse Postgres..."
 (cd warehouse-postgres && docker compose stop)
 
-echo "Stopping Source Postgres..."
+echo "Stopping Source Postgres (retail + SAP schema sap)..."
 (cd source-postgres && docker compose stop)
 
 echo "Done."

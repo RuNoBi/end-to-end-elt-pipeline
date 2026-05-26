@@ -5,7 +5,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "Starting Source Postgres..."
+# SAP mock is schema sap on source-postgres — remove obsolete separate container if it still exists
+if docker ps -aq --filter name=^de_poc_source_sap_chemicals$ 2>/dev/null | grep -q .; then
+  echo "Removing legacy de_poc_source_sap_chemicals (use source-postgres only)..."
+  docker rm -f de_poc_source_sap_chemicals >/dev/null 2>&1 || true
+fi
+
+echo "Starting Source Postgres (retail public.* + SAP schema sap.*)..."
 (cd source-postgres && docker compose up -d --no-recreate)
 
 echo "Starting Warehouse Postgres..."
