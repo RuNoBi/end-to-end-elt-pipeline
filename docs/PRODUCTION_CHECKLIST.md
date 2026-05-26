@@ -34,7 +34,7 @@ The DAG runs `validate_airbyte_connection` before every sync and fails if modes 
 
 ## CKAN publication
 
-- [ ] Run `ckan-platform/scripts/bootstrap-ckan.sh` after first CKAN start or DB reset
+- [ ] After CKAN start/rebuild: `cd ckan-platform && ./scripts/bootstrap-ckan.sh` then `cd ../airflow-platform && docker compose up -d airflow-scheduler airflow-webserver` (see [ckan-platform/docs/CKAN_SETUP.md](../ckan-platform/docs/CKAN_SETUP.md) §2)
 - [ ] Copy token to `airflow-platform/.env`: `CKAN_API_TOKEN`, `AIRFLOW_VAR_CKAN_API_TOKEN`
 - [ ] `CKAN_URL=http://ckan:5000` from Airflow containers
 - [ ] Row caps: `CKAN_PUBLISH_MAX_ROWS` (default 100k mart), dim 50k in code

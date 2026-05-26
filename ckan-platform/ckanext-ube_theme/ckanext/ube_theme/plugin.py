@@ -8,11 +8,14 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 
 from ckanext.ube_theme.helpers import (
+    ube_catalog_domains,
+    ube_catalog_sections,
     ube_catalog_stats,
     ube_company_name,
     ube_data_explorer_url,
     ube_featured_datasets,
     ube_org_id,
+    ube_package_catalog_meta,
     ube_primary_datastore_resource,
 )
 
@@ -56,6 +59,9 @@ class UbeThemePlugin(plugins.SingletonPlugin):
             "ube_org_id": ube_org_id,
             "ube_company_name": ube_company_name,
             "ube_catalog_stats": ube_catalog_stats,
+            "ube_catalog_domains": ube_catalog_domains,
+            "ube_catalog_sections": ube_catalog_sections,
+            "ube_package_catalog_meta": ube_package_catalog_meta,
             "ube_featured_datasets": ube_featured_datasets,
             "ube_data_explorer_url": ube_data_explorer_url,
             "ube_primary_datastore_resource": ube_primary_datastore_resource,

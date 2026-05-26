@@ -149,16 +149,16 @@ docker compose up -d
 # รอจน healthy (~2–3 นาที)
 chmod +x scripts/bootstrap-ckan.sh
 ./scripts/bootstrap-ckan.sh
-```
 
-นำ `AIRFLOW_VAR_CKAN_API_TOKEN` จาก output ไปใส่ใน `airflow-platform/.env` แล้ว rebuild scheduler:
-
-```bash
 cd ../airflow-platform
-docker compose build airflow-scheduler
+docker compose up -d airflow-scheduler airflow-webserver
 ```
 
-เปิด catalog: [http://localhost:5001](http://localhost:5001) — หลัง DAG รันสำเร็จจะเห็น datasets ใน org **de-poc-data**
+`bootstrap-ckan.sh` สร้าง token + sync ไป `airflow-platform/.env` ให้อัตโนมัติ (ผ่าน `scripts/patch-ckan-env.sh`) — **ไม่ต้อง copy token มือ** ยกเว้น bootstrap ล้มเหลว
+
+**หลัง `docker compose build ckan` หรือ rebuild CKAN ทุกครั้ง** ให้รันสองคำสั่งด้านบนอีกครั้ง มิฉะนั้น task `publish_gold_to_ckan` จะ fail
+
+เปิด catalog: [http://localhost:5001](http://localhost:5001) — org **ube-group-thailand**, แยก domain Retail / SAP
 
 รายละเอียด: [../ckan-platform/docs/CKAN_SETUP.md](../ckan-platform/docs/CKAN_SETUP.md)
 

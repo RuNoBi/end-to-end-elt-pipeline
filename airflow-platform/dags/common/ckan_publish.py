@@ -278,13 +278,55 @@ def _iter_table_batches(
 
 def _package_notes(pub: dict[str, str]) -> str:
     freq = pub.get("frequency", "daily")
+    domain = pub.get("catalog_domain", "")
+    layer = pub.get("catalog_layer", "")
+    domain_line = f"**Catalog domain:** {domain}  \n" if domain else ""
+    layer_line = f"**Data layer:** {layer}  \n" if layer else ""
     return (
         f"{pub['description']}\n\n"
+        f"{domain_line}{layer_line}"
         f"**Owner:** {_CATALOG_OWNER}  \n"
         f"**Update frequency:** {freq}  \n"
         f"**Source:** PostgreSQL warehouse (`{pub['schema']}.{pub['table']}`)  \n"
         f"**Usage:** Open this dataset → resource → **Data Explorer** to preview rows."
     )
+
+
+def _catalog_tags(pub: dict[str, str]) -> list[dict[str, str]]:
+    tags = [
+        {"name": "gold"},
+        {"name": "elt"},
+        {"name": "dbt"},
+        {"name": "ube-group-thailand"},
+    ]
+    domain = (pub.get("catalog_domain") or "").strip()
+    layer = (pub.get("catalog_layer") or "").strip()
+    if domain:
+        tags.append({"name": domain})
+    if layer:
+        tags.append({"name": layer})
+    return tags
+
+
+def _catalog_extras(pub: dict[str, str]) -> list[dict[str, str]]:
+    extras: list[dict[str, str]] = [
+        {"key": "update_frequency", "value": pub.get("frequency", "daily")},
+        {"key": "language", "value": "en"},
+    ]
+    if pub.get("catalog_domain"):
+        extras.append({"key": "catalog_domain", "value": pub["catalog_domain"]})
+    if pub.get("catalog_layer"):
+        extras.append({"key": "catalog_layer", "value": pub["catalog_layer"]})
+    if pub.get("catalog_order"):
+        extras.append({"key": "catalog_order", "value": str(pub["catalog_order"])})
+    return extras
+
+
+def _catalog_groups(pub: dict[str, str]) -> list[dict[str, str]]:
+    domain = (pub.get("catalog_domain") or "").strip()
+    if not domain:
+        return []
+    return [{"name": domain, "capacity": "public"}]
 
 
 def _ensure_package(pub: dict[str, str]) -> dict[str, Any]:
@@ -301,7 +343,12 @@ def _ensure_package(pub: dict[str, str]) -> dict[str, Any]:
             "author": _CATALOG_OWNER,
             "license_id": _CATALOG_LICENSE,
             "version": date.today().isoformat(),
+            "tags": _catalog_tags(pub),
+            "extras": _catalog_extras(pub),
         }
+        groups = _catalog_groups(pub)
+        if groups:
+            patch_payload["groups"] = groups
         if org_name != _ckan_org():
             patch_payload["owner_org"] = _ckan_org()
         logger.info("CKAN package exists: %s — updating metadata", name)
@@ -314,28 +361,21 @@ def _ensure_package(pub: dict[str, str]) -> dict[str, Any]:
             )
         return patched if patched is not None else existing
     logger.info("Creating CKAN package: %s (org=%s)", name, _ckan_org())
-    return _ckan_action(
-        "package_create",
-        {
-            "name": name,
-            "title": title,
-            "owner_org": _ckan_org(),
-            "notes": notes,
-            "author": _CATALOG_OWNER,
-            "license_id": _CATALOG_LICENSE,
-            "version": date.today().isoformat(),
-            "tags": [
-                {"name": "gold"},
-                {"name": "elt"},
-                {"name": "dbt"},
-                {"name": "ube-group-thailand"},
-            ],
-            "extras": [
-                {"key": "update_frequency", "value": pub.get("frequency", "daily")},
-                {"key": "language", "value": "en"},
-            ],
-        },
-    )
+    create_payload: dict[str, Any] = {
+        "name": name,
+        "title": title,
+        "owner_org": _ckan_org(),
+        "notes": notes,
+        "author": _CATALOG_OWNER,
+        "license_id": _CATALOG_LICENSE,
+        "version": date.today().isoformat(),
+        "tags": _catalog_tags(pub),
+        "extras": _catalog_extras(pub),
+    }
+    groups = _catalog_groups(pub)
+    if groups:
+        create_payload["groups"] = groups
+    return _ckan_action("package_create", create_payload)
 
 
 def _ensure_resource(package_name: str, resource_name: str, description: str) -> str:

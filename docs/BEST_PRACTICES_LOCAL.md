@@ -4,6 +4,19 @@ This document explains upgrades applied to the PoC so it behaves like a **senior
 
 ---
 
+## 0. Multi-pipeline (config-driven DAGs)
+
+For many sources with similar orchestration but different business logic:
+
+- **One file** `airflow-platform/config/pipelines/<pipeline_id>.yaml` → one Airflow DAG
+- Shared code: `dags/elt_pipelines.py` + `dags/common/elt_dag_builder.py`
+- Per-pipeline: Airbyte `expected_streams`, dbt `--select`, CKAN `config/ckan/*.yaml`
+- dbt: tag models `pipeline_<id>` (see `dbt_project.yml`) or use `models/pipelines/<id>/`
+
+Full guide: [MULTI_PIPELINE_ARCHITECTURE.md](./MULTI_PIPELINE_ARCHITECTURE.md).
+
+---
+
 ## 1. Airflow pipeline (`elt_main_pipeline`)
 
 ### Before

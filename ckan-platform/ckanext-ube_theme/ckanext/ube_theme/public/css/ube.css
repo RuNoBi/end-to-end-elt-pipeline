@@ -1032,6 +1032,220 @@ a:hover {
   border-radius: var(--ube-radius);
 }
 
+/* —— Grouped catalog (domains / layers) —— */
+.ube-domain-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.ube-domain-nav__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  background: var(--ube-white);
+  border: 1px solid var(--ube-border);
+  border-radius: 999px;
+  color: var(--ube-blue-800);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  box-shadow: var(--ube-shadow-sm);
+}
+
+.ube-domain-nav__chip:hover {
+  border-color: var(--ube-blue-600);
+  background: var(--ube-blue-50);
+  color: var(--ube-blue-900);
+}
+
+.ube-domain-nav__count {
+  background: var(--ube-blue-100);
+  color: var(--ube-blue-800);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+.ube-catalog-grouped {
+  margin-top: 0.5rem;
+}
+
+.ube-catalog-domain {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--ube-border);
+}
+
+.ube-catalog-domain:last-child {
+  border-bottom: none;
+}
+
+.ube-catalog-domain__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, var(--ube-blue-800), var(--ube-blue-600));
+  border-radius: var(--ube-radius);
+  color: #fff;
+}
+
+.ube-org-banner--domain {
+  background: linear-gradient(135deg, var(--ube-blue-900), var(--ube-blue-700));
+}
+
+.ube-catalog-domain__icon {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  font-size: 1.35rem;
+}
+
+.ube-catalog-domain__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  color: #fff;
+}
+
+.ube-catalog-domain__desc {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+  max-width: 36rem;
+}
+
+.ube-catalog-domain__meta {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.ube-catalog-domain__count {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.ube-catalog-layer {
+  margin-bottom: 1.75rem;
+}
+
+.ube-catalog-layer__title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.05rem;
+  color: var(--ube-blue-900);
+  margin: 0 0 0.35rem;
+}
+
+.ube-catalog-layer__badge {
+  font-weight: 700;
+}
+
+.ube-catalog-layer__count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ube-slate-500);
+  background: var(--ube-blue-50);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.ube-catalog-layer__desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  color: var(--ube-slate-500);
+}
+
+.ube-catalog-card__badge--layer {
+  background: var(--ube-blue-100);
+  color: var(--ube-blue-800);
+}
+
+.ube-catalog-card__badge--domain {
+  background: var(--ube-blue-900);
+  color: #fff;
+}
+
+.ube-domain-hub {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  background: var(--ube-white);
+  border: 1px solid var(--ube-border);
+  border-radius: var(--ube-radius);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--ube-shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ube-domain-hub:hover {
+  border-color: var(--ube-blue-500);
+  box-shadow: var(--ube-shadow);
+  color: inherit;
+}
+
+.ube-domain-hub__icon {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ube-blue-100);
+  color: var(--ube-blue-800);
+  border-radius: 10px;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.ube-domain-hub h3 {
+  color: var(--ube-blue-900);
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.ube-domain-hub p {
+  color: var(--ube-slate-500);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.ube-domain-hub__layers {
+  font-size: 0.82rem;
+  color: var(--ube-slate-500);
+  margin-bottom: 1rem;
+}
+
+.ube-domain-hub__layers li {
+  margin-bottom: 0.25rem;
+}
+
+.ube-domain-hub__layers li::before {
+  content: "• ";
+  color: var(--ube-blue-600);
+}
+
+.ube-domain-hub__footer {
+  margin-top: auto;
+  font-size: 0.9rem;
+  color: var(--ube-blue-700);
+  font-weight: 600;
+}
+
 @media (max-width: 991px) {
   :root {
     --ube-header-logo-h: 36px;

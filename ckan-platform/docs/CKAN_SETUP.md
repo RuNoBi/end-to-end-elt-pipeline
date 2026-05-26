@@ -34,33 +34,50 @@ Branding: **UBE Group Thailand** theme (`ckanext-ube_theme`) — blue/white port
 
 ## 2. Bootstrap API token + UBE catalog
 
+### First time (or after CKAN DB reset / `docker compose build ckan`)
+
+Run this **every time** you rebuild or recreate the CKAN database — the old API token in `.env` will not work (Airflow `publish_gold_to_ckan` fails with *Authorization Error*).
+
 ```bash
-docker compose build ckan
-docker compose up -d
+cd ckan-platform
 ./scripts/bootstrap-ckan.sh
-# or after token exists: ./scripts/configure-ube-catalog.sh
+
+cd ../airflow-platform
+docker compose up -d airflow-scheduler airflow-webserver
 ```
 
-Copy output into `airflow-platform/.env`:
+What `bootstrap-ckan.sh` does:
+
+- Datastore permissions
+- Creates a new sysadmin API token (if the old one cannot edit the org)
+- Writes `CKAN_API_TOKEN` to `ckan-platform/.env`
+- Syncs token to `airflow-platform/.env` via `scripts/patch-ckan-env.sh`
+- Runs `configure-ube-catalog.sh` (org, groups, domain tags, Data Explorer views)
+
+You do **not** need to copy the token by hand unless `patch-ckan-env.sh` was skipped.
+
+### CKAN already running, token still valid
+
+```bash
+cd ckan-platform
+./scripts/configure-ube-catalog.sh   # groups / branding only, no new token
+```
+
+### Manual env reference (if needed)
 
 ```bash
 CKAN_URL=http://ckan:5000
-CKAN_API_TOKEN=<token>
-AIRFLOW_VAR_CKAN_API_TOKEN=<token>
+CKAN_API_TOKEN=<from bootstrap output>
+AIRFLOW_VAR_CKAN_API_TOKEN=<same token>
 CKAN_ORGANIZATION=ube-group-thailand
-AIRFLOW_VAR_CKAN_ORGANIZATION=ube-group-thailand
-CKAN_PUBLISH_MAX_ROWS=100000
-AIRFLOW_VAR_CKAN_PUBLISH_MAX_ROWS=100000
-CKAN_UPSERT_BATCH_SIZE=2000
-AIRFLOW_VAR_CKAN_UPSERT_BATCH_SIZE=2000
 ```
 
-Rebuild Airflow if you added psycopg2:
+Rebuild Airflow image only when `requirements.txt` changed (e.g. added `psycopg2`):
 
 ```bash
 cd ../airflow-platform
-docker compose build
-docker compose up -d airflow-scheduler
+docker compose build airflow-scheduler
+docker compose up -d airflow-scheduler airflow-webserver
 ```
 
 ---
@@ -91,7 +108,7 @@ To add tables, edit `airflow-platform/dags/common/ckan_publish.py` → `GOLD_PUB
 | Issue | Fix |
 |-------|-----|
 | CKAN unhealthy on Apple Silicon | Images use `platform: linux/amd64` — allow Rosetta / first start slow |
-| `CKAN_API_TOKEN not set` | Run `bootstrap-ckan.sh`, update airflow `.env`, rebuild scheduler |
+| `CKAN_API_TOKEN not set` / **Authorization Error** on publish | Run §2 block above (`bootstrap-ckan.sh` + restart Airflow scheduler) |
 | Publish timeout / OOM (exit -9) | Lower `CKAN_PUBLISH_MAX_ROWS`; publication streams in batches (default 100k mart / 50k dim) |
 | Empty dataset | Gold tests failed upstream — fix dbt first |
 | `package_show` Not Found | Expected on first run — DAG creates packages automatically (fixed in `ckan_publish.py`) |

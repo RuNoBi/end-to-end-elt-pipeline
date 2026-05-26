@@ -1,0 +1,31 @@
+# CKAN catalog groups (domains) — one group per business / source pipeline.
+# Used by publish task and ckan-platform/scripts/configure-ube-catalog.sh
+
+domains:
+  retail-sales:
+    title: Retail Sales
+    description: >
+      E-commerce style customer and order data — dimensions, facts, and the sales performance mart.
+    icon: fa-shopping-cart
+    sort_order: 1
+
+  sap-chemicals:
+    title: SAP Chemical Sales
+    description: >
+      SAP-style chemical sales (materials, business partners, orders) — UBE product portfolio mock.
+    icon: fa-flask
+    sort_order: 2
+
+layers:
+  mart:
+    title: Analytics & KPIs
+    description: Ready-to-use aggregated tables for dashboards.
+    sort_order: 1
+  dimension:
+    title: Dimensions & master data
+    description: Conformed attributes for joining and filtering.
+    sort_order: 2
+  fact:
+    title: Facts & transactions
+    description: Line-level or event-level detail (catalog may show a capped sample).
+    sort_order: 3

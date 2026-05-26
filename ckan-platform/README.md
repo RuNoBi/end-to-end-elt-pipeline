@@ -31,15 +31,16 @@ chmod +x scripts/bootstrap-ckan.sh
 ./scripts/bootstrap-ckan.sh
 ```
 
-Paste the printed `AIRFLOW_VAR_CKAN_API_TOKEN` into `airflow-platform/.env`, then:
+Then restart Airflow (token is synced automatically):
 
 ```bash
 cd ../airflow-platform
-docker compose build airflow-scheduler   # installs psycopg2 for publish task
-docker compose up -d
+docker compose up -d airflow-scheduler airflow-webserver
 ```
 
-Open **http://localhost:5001** — datasets under organization **de-poc-data**.
+**After every `docker compose build ckan`** (or CKAN DB reset), run `bootstrap-ckan.sh` again + restart Airflow — see [docs/CKAN_SETUP.md](docs/CKAN_SETUP.md) §2.
+
+Open **http://localhost:5001** — organization **ube-group-thailand**.
 
 ## Airflow
 

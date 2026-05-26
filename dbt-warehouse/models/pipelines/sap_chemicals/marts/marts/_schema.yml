@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: mart_sap_chemical_sales_performance
+    description: Monthly SAP chemical sales KPIs by material group, plant, and customer segment.
+    columns:
+      - name: order_month
+        tests: [not_null]
+      - name: material_group
+        tests: [not_null]
+      - name: total_net_value
+        tests: [not_null]
+
+  - name: dim_sap_material
+    columns:
+      - name: material_number
+        tests: [not_null, unique]
+
+  - name: dim_sap_customer
+    columns:
+      - name: partner_number
+        tests: [not_null, unique]
+
+  - name: fct_sap_sales_lines
+    columns:
+      - name: sales_order_item_key
+        tests: [not_null, unique]

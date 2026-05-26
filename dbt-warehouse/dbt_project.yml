@@ -22,40 +22,73 @@ on-run-start:
 
 vars:
   raw_schema: src_local_postgres
+  sap_raw_schema: src_sap_chemicals
   # Safety window for late-arriving Airbyte rows on incremental runs
   incremental_lookback_days: 3
 
 models:
   de_poc_warehouse:
+    pipelines:
+      sap_chemicals:
+        staging:
+          +schema: silver
+          +materialized: incremental
+          +incremental_strategy: delete+insert
+          +tags: ["silver", "medallion_silver", "pipeline_sap_chemicals"]
+        intermediate:
+          +schema: silver
+          +materialized: view
+          +tags: ["silver", "medallion_silver", "pipeline_sap_chemicals"]
+        marts:
+          dimensions:
+            +schema: gold
+            +materialized: incremental
+            +incremental_strategy: delete+insert
+            +tags: ["gold", "dimension", "pipeline_sap_chemicals"]
+            +post-hook:
+              - "analyze {{ this }}"
+          facts:
+            +schema: gold
+            +materialized: incremental
+            +incremental_strategy: delete+insert
+            +tags: ["gold", "fact", "pipeline_sap_chemicals"]
+            +post-hook:
+              - "analyze {{ this }}"
+          marts:
+            +schema: gold
+            +materialized: table
+            +tags: ["gold", "mart", "pipeline_sap_chemicals"]
+            +post-hook:
+              - "analyze {{ this }}"
     +on_schema_change: sync_all_columns
     staging:
       +schema: silver
       +materialized: incremental
       +incremental_strategy: delete+insert
-      +tags: ["silver", "medallion_silver"]
+      +tags: ["silver", "medallion_silver", "pipeline_sales_local_postgres"]
     intermediate:
       +schema: silver
       +materialized: view
-      +tags: ["silver", "medallion_silver"]
+      +tags: ["silver", "medallion_silver", "pipeline_sales_local_postgres"]
     marts:
       dimensions:
         +schema: gold
         +materialized: incremental
         +incremental_strategy: delete+insert
-        +tags: ["gold", "dimension"]
+        +tags: ["gold", "dimension", "pipeline_sales_local_postgres"]
         +post-hook:
           - "analyze {{ this }}"
       facts:
         +schema: gold
         +materialized: incremental
         +incremental_strategy: delete+insert
-        +tags: ["gold", "fact"]
+        +tags: ["gold", "fact", "pipeline_sales_local_postgres"]
         +post-hook:
           - "analyze {{ this }}"
       marts:
         +schema: gold
         +materialized: table
-        +tags: ["gold", "mart"]
+        +tags: ["gold", "mart", "pipeline_sales_local_postgres"]
         +post-hook:
           - "analyze {{ this }}"
 

@@ -1,0 +1,28 @@
+{% ckan_extends "group/read.html" %}
+
+{% block subtitle %}{{ group_dict.display_name }} — {{ super() }}{% endblock %}
+
+{% block groups_search_form %}
+  <div class="ube-org-banner ube-org-banner--domain">
+    <img src="/images/ube-logo.png" alt="" class="ube-org-banner__logo"/>
+    <div class="ube-org-banner__body">
+      <p class="ube-org-banner__eyebrow">{{ h.ube_company_name() }} · {{ _('Data domain') }}</p>
+      <h2 class="ube-org-banner__title">{{ group_dict.display_name }}</h2>
+      {% if group_dict.description %}
+        <p>{{ h.markdown_extract(group_dict.description, 280) }}</p>
+      {% endif %}
+    </div>
+    <div class="ube-org-banner__stats">
+      <a class="btn btn-outline-light btn-sm" href="{{ h.url_for('organization.read', id=h.ube_org_id()) }}">
+        <i class="fa fa-th-large" aria-hidden="true"></i> {{ _('Full catalog') }}
+      </a>
+    </div>
+  </div>
+  {{ super() }}
+{% endblock %}
+
+{% block packages_list %}
+  <div class="ube-catalog-grouped">
+    {% snippet 'snippets/catalog_sections.html', domain_filter=group_dict.name %}
+  </div>
+{% endblock %}

@@ -7,6 +7,7 @@
         strategy='timestamp',
         updated_at='_airbyte_extracted_at',
         invalidate_hard_deletes=True,
+        tags=['pipeline_sales_local_postgres'],
     )
 }}
 

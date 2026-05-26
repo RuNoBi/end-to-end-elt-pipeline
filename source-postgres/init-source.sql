@@ -1,5 +1,6 @@
--- Source database bootstrap for the DE PoC.
--- Executed once by the postgres:16-alpine entrypoint on first container start.
+-- Source database bootstrap for the DE PoC (single operational DB).
+-- public.*  = retail sales mock  |  sap.* = SAP chemical sales mock (see init-sap-chemicals.sql)
+-- Production analogue: one MSSQL Server, multiple schemas/table groups.
 
 CREATE SCHEMA IF NOT EXISTS public;
 

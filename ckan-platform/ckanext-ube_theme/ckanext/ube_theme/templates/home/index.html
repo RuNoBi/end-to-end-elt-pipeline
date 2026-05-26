@@ -143,50 +143,30 @@
         <div class="ube-section__head">
           <div>
             <h2>{{ _('Data domains') }}</h2>
-            <p class="ube-section__subtitle">{{ _('Jump to core business subject areas') }}</p>
+            <p class="ube-section__subtitle">{{ _('Browse by source system — datasets are grouped by layer inside each domain') }}</p>
           </div>
+          <a class="ube-section__link" href="{{ h.url_for('organization.read', id=org) }}">{{ _('Full catalog') }} →</a>
         </div>
-        <div class="row g-3">
-          <div class="col-md-6 col-lg-3">
-            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='sales-performance-mart') }}">
-              <span class="ube-domain-card__icon"><i class="fa fa-line-chart" aria-hidden="true"></i></span>
-              <div>
-                <h3>{{ _('Sales mart') }}</h3>
-                <p>{{ _('Monthly KPIs by customer and segment.') }}</p>
-                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
-              </div>
-            </a>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='customer-dimension') }}">
-              <span class="ube-domain-card__icon"><i class="fa fa-users" aria-hidden="true"></i></span>
-              <div>
-                <h3>{{ _('Customer') }}</h3>
-                <p>{{ _('dim_customer — conformed attributes.') }}</p>
-                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
-              </div>
-            </a>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='date-dimension') }}">
-              <span class="ube-domain-card__icon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
-              <div>
-                <h3>{{ _('Date') }}</h3>
-                <p>{{ _('dim_date — calendar spine.') }}</p>
-                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
-              </div>
-            </a>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <a class="ube-domain-card" href="{{ h.url_for('dataset.read', id='orders-fact') }}">
-              <span class="ube-domain-card__icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></span>
-              <div>
-                <h3>{{ _('Orders') }}</h3>
-                <p>{{ _('fct_orders — order-level facts (sample).') }}</p>
-                <span class="ube-domain-card__cta">{{ _('Open') }} →</span>
-              </div>
-            </a>
-          </div>
+        <div class="row g-4">
+          {% for domain in h.ube_catalog_domains() %}
+            <div class="col-md-6">
+              <a class="ube-domain-hub" href="{{ h.url_for('group.read', id=domain.id) }}">
+                <span class="ube-domain-hub__icon"><i class="fa {{ domain.icon }}" aria-hidden="true"></i></span>
+                <div class="ube-domain-hub__body">
+                  <h3>{{ domain.title }}</h3>
+                  <p>{{ domain.description }}</p>
+                  <ul class="ube-domain-hub__layers list-unstyled">
+                    <li><span>{{ _('Analytics & KPIs') }}</span></li>
+                    <li><span>{{ _('Dimensions & master data') }}</span></li>
+                    <li><span>{{ _('Facts & transactions') }}</span></li>
+                  </ul>
+                </div>
+                <span class="ube-domain-hub__footer">
+                  <strong>{{ domain.dataset_count }}</strong> {{ _('datasets') }} →
+                </span>
+              </a>
+            </div>
+          {% endfor %}
         </div>
       </div>
     </section>

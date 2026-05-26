@@ -4,10 +4,12 @@
   {% set title = package.title or package.name %}
   {% set notes = h.markdown_extract(package.notes, extract_length=140) %}
   {% set preview_url = h.ube_data_explorer_url(package.name) %}
+  {% set meta = h.ube_package_catalog_meta(package) %}
   <li class="ube-catalog-card {{ item_class or '' }}">
     <article class="ube-catalog-card__inner">
       <header class="ube-catalog-card__header">
-        <span class="ube-catalog-card__badge">Gold</span>
+        <span class="ube-catalog-card__badge ube-catalog-card__badge--layer">{{ meta.layer_title }}</span>
+        <span class="ube-catalog-card__badge ube-catalog-card__badge--domain">{{ meta.domain_title }}</span>
         {% if package.metadata_modified %}
           <span class="ube-catalog-card__time">{{ h.time_ago_from_timestamp(package.metadata_modified) }}</span>
         {% endif %}

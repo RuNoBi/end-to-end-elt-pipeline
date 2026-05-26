@@ -1,4 +1,5 @@
 # CKAN datasets for pipeline sales_local_postgres (loaded by publish task).
+
 publications:
   - package_name: sales-performance-mart
     package_title: Sales Performance Mart
@@ -8,6 +9,9 @@ publications:
     description: Monthly sales KPIs by customer, segment, and order status.
     primary_key: customer_id,order_month,order_status,order_value_segment
     frequency: daily
+    catalog_domain: retail-sales
+    catalog_layer: mart
+    catalog_order: 10
 
   - package_name: customer-dimension
     package_title: Customer Dimension
@@ -18,6 +22,9 @@ publications:
     primary_key: customer_id
     max_rows: "50000"
     frequency: daily
+    catalog_domain: retail-sales
+    catalog_layer: dimension
+    catalog_order: 20
 
   - package_name: date-dimension
     package_title: Date Dimension
@@ -27,6 +34,9 @@ publications:
     description: Calendar dimension for order dates.
     primary_key: date_key
     frequency: daily
+    catalog_domain: retail-sales
+    catalog_layer: dimension
+    catalog_order: 21
 
   - package_name: orders-fact
     package_title: Orders Fact
@@ -37,3 +47,6 @@ publications:
     primary_key: order_id
     max_rows: "100000"
     frequency: daily
+    catalog_domain: retail-sales
+    catalog_layer: fact
+    catalog_order: 30

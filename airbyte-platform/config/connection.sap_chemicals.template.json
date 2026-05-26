@@ -1,0 +1,50 @@
+{
+  "name": "sap-chemicals -> dwh",
+  "connectionId": "REPLACE_AFTER_UI_OR_EXPORT",
+  "namespaceDefinition": "destination",
+  "namespaceFormat": "src_sap_chemicals",
+  "prefix": "",
+  "nonBreakingChangesPreference": "ignore",
+  "scheduleType": "manual",
+  "syncCatalog": {
+    "streams": [
+      {
+        "stream": { "name": "sap_material" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["updated_at"],
+          "selected": true
+        }
+      },
+      {
+        "stream": { "name": "sap_business_partner" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["updated_at"],
+          "selected": true
+        }
+      },
+      {
+        "stream": { "name": "sap_sales_order" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["changed_at"],
+          "selected": true
+        }
+      },
+      {
+        "stream": { "name": "sap_sales_order_item" },
+        "config": {
+          "syncMode": "incremental",
+          "destinationSyncMode": "append_dedup",
+          "cursorField": ["item_changed_at"],
+          "selected": true
+        }
+      }
+    ]
+  },
+  "notes": "Reuse the SAME Airbyte Source as sales (de_poc_source_postgres:5432 / sales_source). New Connection only. Sync schema sap → namespace src_sap_chemicals."
+}

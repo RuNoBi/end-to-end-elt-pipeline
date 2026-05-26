@@ -1,0 +1,48 @@
+{# Grouped dataset list: domain → layer → cards. Pass domain_filter for group pages. #}
+{% set sections = h.ube_catalog_sections(domain_filter) %}
+
+{% if sections %}
+  {% for section in sections %}
+    <section class="ube-catalog-domain" id="domain-{{ section.id }}">
+      {% if not domain_filter %}
+        <header class="ube-catalog-domain__head">
+          <div class="ube-catalog-domain__icon" aria-hidden="true">
+            <i class="fa {{ section.icon }}" aria-hidden="true"></i>
+          </div>
+          <div class="ube-catalog-domain__text">
+            <h2 class="ube-catalog-domain__title">{{ section.title }}</h2>
+            <p class="ube-catalog-domain__desc">{{ section.description }}</p>
+          </div>
+          <div class="ube-catalog-domain__meta">
+            <span class="ube-catalog-domain__count">{{ section.dataset_count }} {{ _('datasets') }}</span>
+            <a class="btn btn-outline-primary btn-sm" href="{{ h.url_for('group.read', id=section.id) }}">
+              {{ _('View domain') }} →
+            </a>
+          </div>
+        </header>
+      {% endif %}
+
+      {% for layer in section.layers %}
+        <div class="ube-catalog-layer">
+          <h3 class="ube-catalog-layer__title">
+            <span class="ube-catalog-layer__badge">{{ layer.title }}</span>
+            <span class="ube-catalog-layer__count">{{ layer.count }}</span>
+          </h3>
+          {% if layer.description %}
+            <p class="ube-catalog-layer__desc">{{ layer.description }}</p>
+          {% endif %}
+          <ul class="ube-catalog-list list-unstyled">
+            {% for package in layer.packages %}
+              {% snippet 'snippets/package_item.html', package=package, item_class='ube-catalog-list__item' %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </section>
+  {% endfor %}
+{% else %}
+  <div class="ube-empty-state">
+    <i class="fa fa-inbox ube-empty-state__icon" aria-hidden="true"></i>
+    <p>{{ _('No datasets in this category yet. Run the Airflow publication task.') }}</p>
+  </div>
+{% endif %}

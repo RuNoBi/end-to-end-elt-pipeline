@@ -88,7 +88,7 @@ end-to-end-elt-pipeline/
 | **Transformation**            | [dbt Core](https://www.getdbt.com/)           | SQL models, tests, documentation, incremental processing    |
 | **Warehouse**                 | [PostgreSQL 16](https://www.postgresql.org/)  | Central store for Bronze, Silver, and Gold                  |
 | **Containerization**          | Docker & Docker Compose                       | Environment isolation and reproducible deployments          |
-| **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | `elt_main_pipeline` DAG: Airbyte → dbt run → dbt test |
+| **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | Config-driven ELT DAGs (`elt_pipelines.py`); PoC: `elt_main_pipeline`, `elt_sap_chemicals` |
 | **Data Catalog**              | [CKAN](https://ckan.org/) (`ckan-platform/`)  | Gold marts published to Datastore; UI :5001                 |
 
 

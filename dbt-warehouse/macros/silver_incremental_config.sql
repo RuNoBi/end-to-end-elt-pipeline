@@ -7,7 +7,8 @@
     unique_key,
     extracted_at_column='_airbyte_extracted_at',
     bronze_table=none,
-    bronze_key='id'
+    bronze_key='id',
+    bronze_source=var('raw_schema')
 ) %}
     {% set post_hooks = [
         "create index if not exists " ~ this.identifier ~ "_pk_idx on {{ this }} (" ~ unique_key ~ ")",
@@ -15,7 +16,7 @@
     ] %}
     {% if bronze_table is not none %}
         {% set post_hooks = post_hooks + [
-            "{{ prune_keys_not_in_bronze('" ~ bronze_table ~ "', '" ~ unique_key ~ "', '" ~ bronze_key ~ "') }}"
+            "{{ prune_keys_not_in_bronze('" ~ bronze_table ~ "', '" ~ unique_key ~ "', '" ~ bronze_key ~ "', '" ~ bronze_source ~ "') }}"
         ] %}
     {% endif %}
     {{

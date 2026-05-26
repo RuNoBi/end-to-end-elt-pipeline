@@ -68,6 +68,39 @@ def api(action: str, payload: dict, *, ok_if_exists: bool = False) -> dict | Non
 
 
 logo_url = os.environ["CKAN_URL"].rstrip("/") + "/images/ube-logo.png"
+CATALOG_GROUPS = [
+    (
+        "retail-sales",
+        "Retail Sales",
+        "E-commerce customer and order data — marts, dimensions, and facts.",
+    ),
+    (
+        "sap-chemicals",
+        "SAP Chemical Sales",
+        "SAP-style chemical sales — materials, partners, and order lines.",
+    ),
+]
+
+print("Ensuring catalog groups (domains) ...")
+for gname, gtitle, gnotes in CATALOG_GROUPS:
+    if api(
+        "group_create",
+        {"name": gname, "title": gtitle, "notes": gnotes, "type": "group"},
+        ok_if_exists=True,
+    ) is None:
+        api("group_patch", {"id": gname, "title": gtitle, "notes": gnotes})
+
+PACKAGE_CATALOG = {
+    "sales-performance-mart": ("retail-sales", "mart", "10"),
+    "customer-dimension": ("retail-sales", "dimension", "20"),
+    "date-dimension": ("retail-sales", "dimension", "21"),
+    "orders-fact": ("retail-sales", "fact", "30"),
+    "sap-chemical-sales-performance": ("sap-chemicals", "mart", "10"),
+    "sap-chemical-materials": ("sap-chemicals", "dimension", "20"),
+    "sap-chemical-customers": ("sap-chemicals", "dimension", "21"),
+    "sap-chemical-sales-lines": ("sap-chemicals", "fact", "30"),
+}
+
 print(f"Ensuring organization {org} ...")
 if api(
     "organization_create",
@@ -92,8 +125,44 @@ if org != legacy:
         api("package_patch", {"id": pkg["name"], "owner_org": org})
         print(f"  moved {pkg['name']}")
 
-print("Adding Data Explorer (datatables) views ...")
+print("Tagging datasets with catalog domain / layer ...")
 search = api("package_search", {"fq": f"organization:{org}", "rows": 100}) or {}
+for pkg in search.get("results") or []:
+    pname = pkg["name"]
+    meta = PACKAGE_CATALOG.get(pname)
+    if not meta:
+        continue
+    domain, layer, order = meta
+    extras = {e["key"]: e["value"] for e in pkg.get("extras") or []}
+    extras.update(
+        {
+            "catalog_domain": domain,
+            "catalog_layer": layer,
+            "catalog_order": order,
+        }
+    )
+    api(
+        "package_patch",
+        {
+            "id": pname,
+            "groups": [{"name": domain, "capacity": "public"}],
+            "extras": [{"key": k, "value": v} for k, v in extras.items()],
+            "tags": [
+                {"name": n}
+                for n in sorted(
+                    {
+                        *(t["name"] for t in pkg.get("tags") or []),
+                        "gold",
+                        domain,
+                        layer,
+                    }
+                )
+            ],
+        },
+    )
+    print(f"  catalog: {pname} → {domain} / {layer}")
+
+print("Adding Data Explorer (datatables) views ...")
 for pkg in search.get("results") or []:
     for res in pkg.get("resources") or []:
         if res.get("url_type") != "datastore":

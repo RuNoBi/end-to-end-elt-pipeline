@@ -9,22 +9,29 @@
       {% if group_dict.description %}
         <p>{{ h.markdown_extract(group_dict.description, 200) }}</p>
       {% else %}
-        <p>{{ _('Browse Gold-layer datasets — open any card and click Preview for an instant table view.') }}</p>
+        <p>{{ _('Datasets grouped by business domain — Retail sales and SAP chemical sales.') }}</p>
       {% endif %}
     </div>
     <div class="ube-org-banner__stats">
       <span><strong>{{ page.item_count }}</strong> {{ _('datasets') }}</span>
     </div>
   </div>
+
+  <nav class="ube-domain-nav" aria-label="{{ _('Data domains') }}">
+    {% for domain in h.ube_catalog_domains() %}
+      <a class="ube-domain-nav__chip" href="{{ h.url_for('group.read', id=domain.id) }}">
+        <i class="fa {{ domain.icon }}" aria-hidden="true"></i>
+        <span>{{ domain.title }}</span>
+        <span class="ube-domain-nav__count">{{ domain.dataset_count }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
   {{ super() }}
 {% endblock %}
 
 {% block packages_list %}
-  {% if page.items %}
-    <ul class="ube-catalog-list list-unstyled">
-      {% for package in page.items %}
-        {% snippet 'snippets/package_item.html', package=package, item_class='ube-catalog-list__item' %}
-      {% endfor %}
-    </ul>
-  {% endif %}
+  <div class="ube-catalog-grouped">
+    {% snippet 'snippets/catalog_sections.html' %}
+  </div>
 {% endblock %}
