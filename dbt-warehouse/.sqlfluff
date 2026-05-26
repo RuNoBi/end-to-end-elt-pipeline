@@ -2,7 +2,7 @@
 dialect = postgres
 templater = dbt
 max_line_length = 120
-exclude_rules = layout.long_lines, structure.using, convention.casing
+exclude_rules = layout.long_lines, structure.using
 
 [sqlfluff:indentation]
 tab_space_size = 4
