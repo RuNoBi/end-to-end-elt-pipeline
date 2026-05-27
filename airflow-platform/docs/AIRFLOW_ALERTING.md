@@ -113,8 +113,12 @@ Body includes:
 
 - DAG, task, run id, logical date  
 - **Triage hint** (Silver gate vs Airbyte vs Gold)  
-- Exception snippet (if any)  
+- **Root cause + immediate actions** (rule-based from logs)  
+- **Violating rows** (live warehouse preview when available)  
+- Compiled test SQL + dbt failure log block  
 - Link to **Grid → Logs**
+
+**Debug checklist:** [docs/FAILURE_EMAIL_DEBUG_CHECKLIST.md](../../docs/FAILURE_EMAIL_DEBUG_CHECKLIST.md)
 
 Retries: with `retries: 1`, you get **at most one email per failed task** when the last try fails — not on the first retry.
 
@@ -128,6 +132,7 @@ Retries: with `retries: 1`, you get **at most one email per failed task** when t
 | No secrets in Git | SMTP password only in `.env` |
 | Actionable subject | `[ELT ALERT][FAILED]` + dag · task |
 | Layer-aware hints | `dags/common/alerting.py` `LAYER_HINTS` |
+| Rule-based triage from logs | `dags/common/alerting.py` parses task logs for dbt/Airbyte hints |
 | Test channel | `scripts/test_smtp_alert.sh` |
 | Don’t alert on retry noise | `email_on_retry: False` |
 
