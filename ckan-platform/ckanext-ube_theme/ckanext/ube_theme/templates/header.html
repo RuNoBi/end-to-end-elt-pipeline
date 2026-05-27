@@ -27,6 +27,28 @@
   <li class="nav-item{% if c.controller == 'organization' %} active{% endif %}">
     <a class="nav-link" href="{{ h.url_for('organization.read', id=org) }}">{{ _('Data catalog') }}</a>
   </li>
+  <li class="nav-item dropdown">
+    <a
+      class="nav-link dropdown-toggle"
+      href="#"
+      data-bs-toggle="dropdown"
+      role="button"
+      aria-expanded="false"
+    >
+      {{ _('Domains') }}
+    </a>
+    <ul class="dropdown-menu ube-nav-dropdown">
+      {% for domain in h.ube_catalog_domains() %}
+        <li>
+          <a class="dropdown-item" href="{{ h.url_for('group.read', id=domain.id) }}">
+            <i class="fa {{ domain.icon }}" aria-hidden="true"></i>
+            {{ domain.title }}
+            <span class="ube-nav-dropdown__count">{{ domain.dataset_count }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </li>
   <li class="nav-item{% if c.controller == 'dataset' %} active{% endif %}">
     <a class="nav-link" href="{{ h.url_for('dataset.search') }}?q=organization:{{ org }}">{{ _('Datasets') }}</a>
   </li>

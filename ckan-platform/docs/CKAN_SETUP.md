@@ -101,6 +101,14 @@ Trigger **`elt_main_pipeline`** in Airflow. After success:
 
 To add tables, edit `airflow-platform/dags/common/ckan_publish.py` → `GOLD_PUBLICATIONS`.
 
+### Download vs full warehouse
+
+**Download** and **Data Explorer** both use **CKAN Datastore only** — they export every row that was copied during the last Airflow `publish_gold_to_ckan` run, not a random UI sample.
+
+Publication applies `SELECT * FROM schema.table LIMIT N` (default `CKAN_PUBLISH_MAX_ROWS=100000`; per-dataset overrides in `airflow-platform/config/ckan/*.yaml`). If the warehouse has more rows than `N`, the CSV is complete for Datastore but **not** the full warehouse history.
+
+For large-scale analytics on full history, query the **dbt warehouse** (Postgres). To raise the CKAN cap, set `CKAN_PUBLISH_MAX_ROWS` / `max_rows` in the YAML and re-run the publish task. Dataset pages show row counts after the next publish.
+
 ---
 
 ## 5. Troubleshooting

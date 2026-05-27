@@ -1,5 +1,14 @@
 {# Grouped dataset list: domain → layer → cards. Pass domain_filter for group pages. #}
 {% set sections = h.ube_catalog_sections(domain_filter) %}
+{% set active_layer = request.args.get('layer', '') %}
+
+{% if active_layer %}
+  <p class="ube-catalog-filter-hint">
+    <i class="fa fa-filter" aria-hidden="true"></i>
+    {{ _('Showing') }} <strong>{{ active_layer }}</strong> {{ _('layer only.') }}
+    <a href="{% if domain_filter %}{{ h.ube_group_catalog_url(domain_filter) }}{% else %}{{ h.ube_org_catalog_url() }}{% endif %}">{{ _('Clear filter') }}</a>
+  </p>
+{% endif %}
 
 {% if sections %}
   {% for section in sections %}
@@ -23,7 +32,9 @@
       {% endif %}
 
       {% for layer in section.layers %}
-        <div class="ube-catalog-layer">
+        {% if active_layer and layer.id != active_layer %}
+        {% else %}
+        <div class="ube-catalog-layer" id="layer-{{ section.id }}-{{ layer.id }}">
           <h3 class="ube-catalog-layer__title">
             <span class="ube-catalog-layer__badge">{{ layer.title }}</span>
             <span class="ube-catalog-layer__count">{{ layer.count }}</span>
@@ -37,6 +48,7 @@
             {% endfor %}
           </ul>
         </div>
+        {% endif %}
       {% endfor %}
     </section>
   {% endfor %}

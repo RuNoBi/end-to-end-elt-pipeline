@@ -1,0 +1,32 @@
+{% set scope = h.ube_dataset_data_scope(pkg) %}
+{% if scope.has_metadata or scope.warehouse %}
+  <aside class="ube-data-scope-notice" role="note">
+    <i class="fa fa-info-circle" aria-hidden="true"></i>
+    <div>
+      {% if scope.published_rows is not none %}
+        <p>
+          <strong>{{ _('Download & preview') }}:</strong>
+          {{ _('Includes') }}
+          <strong>{{ '{:,}'.format(scope.published_rows) }}</strong>
+          {{ _('rows loaded into CKAN Datastore') }}.
+        </p>
+      {% else %}
+        <p>
+          <strong>{{ _('Download & preview') }}:</strong>
+          {{ _('Reflects rows currently stored in CKAN Datastore (refreshed by the Airflow publish task).') }}
+        </p>
+      {% endif %}
+      {% if scope.is_capped %}
+        <p class="ube-data-scope-notice__warn">
+          {{ _('This dataset hit the publish row cap') }}
+          {% if scope.publish_limit %}({{ '{:,}'.format(scope.publish_limit) }}){% endif %} —
+          {{ _('the warehouse may contain more history. Use the analytics database for full-scale analysis.') }}
+        </p>
+      {% elif scope.warehouse %}
+        <p class="ube-data-scope-notice__muted">
+          {{ _('Source table') }}: <code>{{ scope.warehouse }}</code>
+        </p>
+      {% endif %}
+    </div>
+  </aside>
+{% endif %}

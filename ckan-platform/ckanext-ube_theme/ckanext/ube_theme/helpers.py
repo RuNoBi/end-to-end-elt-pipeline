@@ -131,6 +131,43 @@ def ube_catalog_sections(
     return sections
 
 
+def _extras_map(package: dict[str, Any]) -> dict[str, str]:
+    return {
+        e.get("key"): e.get("value")
+        for e in package.get("extras") or []
+        if e.get("key")
+    }
+
+
+def ube_dataset_data_scope(package: dict[str, Any]) -> dict[str, Any]:
+    """Rows in CKAN Datastore vs warehouse (set by Airflow publish). Download uses Datastore only."""
+    extras = _extras_map(package)
+    published_raw = extras.get("published_row_count")
+    limit_raw = extras.get("publish_row_limit")
+    warehouse = (extras.get("warehouse_source") or "").strip()
+    published = (
+        int(published_raw)
+        if published_raw and str(published_raw).isdigit()
+        else None
+    )
+    limit = (
+        int(limit_raw) if limit_raw and str(limit_raw).isdigit() else None
+    )
+    is_capped = bool(
+        published is not None
+        and limit is not None
+        and published >= limit
+        and limit > 0
+    )
+    return {
+        "warehouse": warehouse,
+        "published_rows": published,
+        "publish_limit": limit,
+        "is_capped": is_capped,
+        "has_metadata": published is not None,
+    }
+
+
 def ube_package_catalog_meta(package: dict[str, Any]) -> dict[str, str]:
     domain_id = infer_catalog_domain(package)
     layer_id = infer_catalog_layer(package)
@@ -192,6 +229,56 @@ def ube_data_explorer_url(package_name: str, resource_id: str | None = None) -> 
     except Exception:
         logger.warning("ube_data_explorer_url failed for %s", package_name, exc_info=True)
         return None
+
+
+def ube_popular_search_tags(limit: int = 6) -> list[dict[str, str]]:
+    """Tags for homepage / search — derived from published dataset names."""
+    tags: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for pkg in _org_packages(50):
+        name = (pkg.get("name") or "").strip()
+        title = (pkg.get("title") or name).strip()
+        meta = ube_package_catalog_meta(pkg)
+        for label in (
+            meta.get("domain_title", ""),
+            meta.get("layer_title", ""),
+            title.split()[0] if title else "",
+        ):
+            key = label.lower()
+            if not label or len(key) < 3 or key in seen:
+                continue
+            seen.add(key)
+            tags.append(
+                {
+                    "label": label,
+                    "url": toolkit.url_for(
+                        "dataset.search",
+                        q=f"organization:{ube_org_id()} {label}",
+                    ),
+                }
+            )
+            if len(tags) >= limit:
+                return tags
+    return tags
+
+
+def ube_org_catalog_url(domain_id: str | None = None, layer_id: str | None = None) -> str:
+    base = toolkit.url_for("organization.read", id=ube_org_id())
+    params: list[str] = []
+    if domain_id:
+        params.append(f"domain={domain_id}")
+    if layer_id:
+        params.append(f"layer={layer_id}")
+    if not params:
+        return base
+    return f"{base}?{'&'.join(params)}"
+
+
+def ube_group_catalog_url(group_id: str, layer_id: str | None = None) -> str:
+    base = toolkit.url_for("group.read", id=group_id)
+    if layer_id:
+        return f"{base}?layer={layer_id}"
+    return base
 
 
 def ube_featured_datasets(limit: int = 6) -> list[dict[str, Any]]:

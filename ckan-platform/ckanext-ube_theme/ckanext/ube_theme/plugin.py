@@ -14,8 +14,12 @@ from ckanext.ube_theme.helpers import (
     ube_company_name,
     ube_data_explorer_url,
     ube_featured_datasets,
+    ube_group_catalog_url,
+    ube_org_catalog_url,
     ube_org_id,
+    ube_dataset_data_scope,
     ube_package_catalog_meta,
+    ube_popular_search_tags,
     ube_primary_datastore_resource,
 )
 
@@ -62,7 +66,11 @@ class UbeThemePlugin(plugins.SingletonPlugin):
             "ube_catalog_domains": ube_catalog_domains,
             "ube_catalog_sections": ube_catalog_sections,
             "ube_package_catalog_meta": ube_package_catalog_meta,
+            "ube_dataset_data_scope": ube_dataset_data_scope,
             "ube_featured_datasets": ube_featured_datasets,
             "ube_data_explorer_url": ube_data_explorer_url,
             "ube_primary_datastore_resource": ube_primary_datastore_resource,
+            "ube_popular_search_tags": ube_popular_search_tags,
+            "ube_org_catalog_url": ube_org_catalog_url,
+            "ube_group_catalog_url": ube_group_catalog_url,
         }

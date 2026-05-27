@@ -288,7 +288,8 @@ def _package_notes(pub: dict[str, str]) -> str:
         f"**Owner:** {_CATALOG_OWNER}  \n"
         f"**Update frequency:** {freq}  \n"
         f"**Source:** PostgreSQL warehouse (`{pub['schema']}.{pub['table']}`)  \n"
-        f"**Usage:** Open this dataset → resource → **Data Explorer** to preview rows."
+        f"**Usage:** Open this dataset → resource → **Data Explorer** to preview rows, "
+        f"or **Download** for CSV (all rows currently loaded in Datastore — see publish cap in dataset metadata)."
     )
 
 
@@ -327,6 +328,26 @@ def _catalog_groups(pub: dict[str, str]) -> list[dict[str, str]]:
     if not domain:
         return []
     return [{"name": domain, "capacity": "public"}]
+
+
+def _sync_data_scope_extras(
+    package_name: str, pub: dict[str, str], published_rows: int, row_limit: int
+) -> None:
+    """Record how many warehouse rows were copied to CKAN (shown in catalog UI)."""
+    pkg = _ckan_action("package_show", {"id": package_name})
+    extras_map = {
+        e["key"]: e["value"] for e in pkg.get("extras") or [] if e.get("key")
+    }
+    extras_map["published_row_count"] = str(published_rows)
+    extras_map["publish_row_limit"] = str(row_limit)
+    extras_map["warehouse_source"] = f"{pub['schema']}.{pub['table']}"
+    _ckan_action(
+        "package_patch",
+        {
+            "id": package_name,
+            "extras": [{"key": k, "value": v} for k, v in extras_map.items()],
+        },
+    )
 
 
 def _ensure_package(pub: dict[str, str]) -> dict[str, Any]:
@@ -476,6 +497,7 @@ def _publish_table(pub: dict[str, str]) -> dict[str, Any]:
         resource_id,
         pub["package_name"],
     )
+    _sync_data_scope_extras(pub["package_name"], pub, total, limit)
     return {"resource_id": resource_id, "rows": total, "package": pub["package_name"]}
 
 

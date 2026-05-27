@@ -17,15 +17,7 @@
     </div>
   </div>
 
-  <nav class="ube-domain-nav" aria-label="{{ _('Data domains') }}">
-    {% for domain in h.ube_catalog_domains() %}
-      <a class="ube-domain-nav__chip" href="{{ h.url_for('group.read', id=domain.id) }}">
-        <i class="fa {{ domain.icon }}" aria-hidden="true"></i>
-        <span>{{ domain.title }}</span>
-        <span class="ube-domain-nav__count">{{ domain.dataset_count }}</span>
-      </a>
-    {% endfor %}
-  </nav>
+  {% snippet 'snippets/catalog_toolbar.html' %}
 
   {{ super() }}
 {% endblock %}

@@ -20,6 +20,13 @@
       {% if notes %}
         <p class="ube-catalog-card__notes">{{ notes }}</p>
       {% endif %}
+      {% set res_count = (package.resources or [])|length %}
+      {% if res_count %}
+        <p class="ube-catalog-card__meta">
+          <i class="fa fa-database" aria-hidden="true"></i>
+          {{ res_count }} {{ _('resource') if res_count == 1 else _('resources') }}
+        </p>
+      {% endif %}
       <footer class="ube-catalog-card__footer">
         {% if preview_url %}
           <a class="btn btn-primary btn-sm" href="{{ preview_url }}">

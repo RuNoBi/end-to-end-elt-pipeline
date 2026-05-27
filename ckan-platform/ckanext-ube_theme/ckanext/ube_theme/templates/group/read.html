@@ -18,6 +18,9 @@
       </a>
     </div>
   </div>
+
+  {% snippet 'snippets/catalog_toolbar.html', active_domain=group_dict.name %}
+
   {{ super() }}
 {% endblock %}
 

@@ -1,3 +1,8 @@
 {% ckan_extends "page.html" %}
 
 {% block wrapper_class %} ube-page-wrapper{% endblock %}
+
+{% block wrapper %}
+  <a class="ube-skip-link" href="#content">{{ _('Skip to main content') }}</a>
+  {{ super() }}
+{% endblock %}

@@ -1,0 +1,76 @@
+{# Sticky catalog navigation: domains + layer filters. #}
+{% set org = h.ube_org_id() %}
+{% set active_domain = active_domain|default(none) %}
+{% set active_layer = request.args.get('layer', '') %}
+{% set sections = h.ube_catalog_sections(active_domain) %}
+
+<nav class="ube-catalog-toolbar" aria-label="{{ _('Catalog navigation') }}">
+  <div class="ube-catalog-toolbar__row">
+    <div class="ube-catalog-toolbar__group">
+      <span class="ube-catalog-toolbar__label">{{ _('Domain') }}</span>
+      <div class="ube-catalog-toolbar__pills">
+        <a
+          class="ube-pill{% if not active_domain %} ube-pill--active{% endif %}"
+          href="{{ h.ube_org_catalog_url() }}"
+        >
+          {{ _('All') }}
+        </a>
+        {% for domain in h.ube_catalog_domains() %}
+          <a
+            class="ube-pill{% if active_domain == domain.id %} ube-pill--active{% endif %}"
+            href="{{ h.url_for('group.read', id=domain.id) }}"
+          >
+            <i class="fa {{ domain.icon }}" aria-hidden="true"></i>
+            {{ domain.title }}
+            <span class="ube-pill__count">{{ domain.dataset_count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="ube-catalog-toolbar__group">
+      <span class="ube-catalog-toolbar__label">{{ _('Layer') }}</span>
+      <div class="ube-catalog-toolbar__pills">
+        <a
+          class="ube-pill{% if not active_layer %} ube-pill--active{% endif %}"
+          href="{% if active_domain %}{{ h.ube_group_catalog_url(active_domain) }}{% else %}{{ h.ube_org_catalog_url() }}{% endif %}"
+        >
+          {{ _('All layers') }}
+        </a>
+        {% for layer_id, layer_meta in [
+          ('mart', _('KPIs')),
+          ('dimension', _('Dimensions')),
+          ('fact', _('Facts')),
+        ] %}
+          <a
+            class="ube-pill{% if active_layer == layer_id %} ube-pill--active{% endif %}"
+            href="{% if active_domain %}{{ h.ube_group_catalog_url(active_domain, layer_id) }}{% else %}{{ h.ube_org_catalog_url(layer_id=layer_id) }}{% endif %}"
+          >
+            {{ layer_meta }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <form
+    class="ube-catalog-toolbar__search"
+    action="{{ h.url_for('dataset.search') }}"
+    method="get"
+    role="search"
+  >
+    <input type="hidden" name="fq" value="organization:{{ org }}{% if active_domain %} groups:{{ active_domain }}{% endif %}"/>
+    <label class="visually-hidden" for="ube-catalog-q">{{ _('Search in catalog') }}</label>
+    <input
+      id="ube-catalog-q"
+      class="form-control"
+      type="search"
+      name="q"
+      value="{{ request.args.get('q', '') }}"
+      placeholder="{{ _('Search datasets in this catalog…') }}"
+    />
+    <button type="submit" class="btn btn-primary">
+      <i class="fa fa-search" aria-hidden="true"></i> {{ _('Search') }}
+    </button>
+  </form>
+</nav>

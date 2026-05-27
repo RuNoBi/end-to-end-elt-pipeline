@@ -6,7 +6,7 @@
   {% set featured = h.ube_featured_datasets(6) %}
 
   <div class="ube-home" role="main">
-    <section class="ube-hero-banner">
+    <section class="ube-hero-banner ube-animate-hero">
       <div class="ube-hero-banner__pattern" aria-hidden="true"></div>
       <div class="container">
         <div class="row align-items-center g-4">
@@ -51,9 +51,12 @@
               </form>
               <div class="ube-hero-search-card__tags">
                 <span class="ube-hero-search-card__tags-label">{{ _('Popular') }}:</span>
-                <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=sales">sales</a>
-                <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=customer">customer</a>
-                <a class="ube-tag" href="{{ h.url_for('dataset.read', id='sales-performance-mart') }}">mart</a>
+                {% for tag in h.ube_popular_search_tags(5) %}
+                  <a class="ube-tag" href="{{ tag.url }}">{{ tag.label }}</a>
+                {% else %}
+                  <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=organization:{{ org }} mart">mart</a>
+                  <a class="ube-tag" href="{{ h.url_for('dataset.search') }}?q=organization:{{ org }} customer">customer</a>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -61,25 +64,25 @@
       </div>
     </section>
 
-    <section class="ube-stats">
+    <section class="ube-stats ube-reveal">
       <div class="container">
         <div class="row g-3">
           <div class="col-md-4">
-            <div class="ube-stat-card">
+            <div class="ube-stat-card ube-reveal ube-reveal--delay-1">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-folder-open"></i></span>
               <span class="ube-stat-card__value">{{ stats.datasets }}</span>
               <span class="ube-stat-card__label">{{ _('Datasets') }}</span>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="ube-stat-card">
+            <div class="ube-stat-card ube-reveal ube-reveal--delay-2">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-database"></i></span>
               <span class="ube-stat-card__value">{{ stats.resources }}</span>
               <span class="ube-stat-card__label">{{ _('Data resources') }}</span>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="ube-stat-card">
+            <div class="ube-stat-card ube-reveal ube-reveal--delay-3">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-building"></i></span>
               <span class="ube-stat-card__value">{{ stats.organizations }}</span>
               <span class="ube-stat-card__label">{{ _('Publisher') }}</span>
@@ -89,7 +92,9 @@
       </div>
     </section>
 
-    <section class="ube-section">
+    {% snippet 'snippets/quick_start.html' %}
+
+    <section class="ube-section ube-reveal">
       <div class="container">
         <div class="ube-section__head">
           <div>
@@ -101,10 +106,13 @@
         {% if featured %}
           <div class="row g-3">
             {% for pkg in featured %}
+              {% set meta = h.ube_package_catalog_meta(pkg) %}
+              {% set preview_url = h.ube_data_explorer_url(pkg.name) %}
               <div class="col-md-6 col-lg-4">
-                <article class="ube-dataset-card">
+                <article class="ube-dataset-card ube-reveal ube-reveal--delay-{{ loop.index % 4 + 1 }}">
                   <div class="ube-dataset-card__top">
-                    <span class="ube-dataset-card__badge">{{ _('Gold') }}</span>
+                    <span class="ube-dataset-card__badge ube-dataset-card__badge--layer">{{ meta.layer_title }}</span>
+                    <span class="ube-dataset-card__badge ube-dataset-card__badge--domain">{{ meta.domain_title }}</span>
                     {% if pkg.metadata_modified %}
                       <span class="ube-dataset-card__time">{{ h.time_ago_from_timestamp(pkg.metadata_modified) }}</span>
                     {% endif %}
@@ -121,9 +129,16 @@
                     <span><i class="fa fa-database" aria-hidden="true"></i>
                       {{ (pkg.resources or [])|length }} {{ _('resources') }}</span>
                   </div>
-                  <a class="btn btn-outline-primary btn-sm ube-dataset-card__btn" href="{{ h.url_for('dataset.read', id=pkg.name) }}">
-                    {{ _('Open dataset') }}
-                  </a>
+                  <div class="ube-dataset-card__actions">
+                    {% if preview_url %}
+                      <a class="btn btn-primary btn-sm" href="{{ preview_url }}">
+                        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
+                      </a>
+                    {% endif %}
+                    <a class="btn btn-outline-primary btn-sm" href="{{ h.url_for('dataset.read', id=pkg.name) }}">
+                      {{ _('Details') }}
+                    </a>
+                  </div>
                 </article>
               </div>
             {% endfor %}
@@ -138,7 +153,7 @@
       </div>
     </section>
 
-    <section class="ube-section ube-section--muted">
+    <section class="ube-section ube-section--muted ube-section--domains ube-reveal">
       <div class="container">
         <div class="ube-section__head">
           <div>
@@ -147,49 +162,72 @@
           </div>
           <a class="ube-section__link" href="{{ h.url_for('organization.read', id=org) }}">{{ _('Full catalog') }} →</a>
         </div>
-        <div class="row g-4">
+        <div class="row g-4 ube-domains-grid">
           {% for domain in h.ube_catalog_domains() %}
             <div class="col-md-6">
-              <a class="ube-domain-hub" href="{{ h.url_for('group.read', id=domain.id) }}">
-                <span class="ube-domain-hub__icon"><i class="fa {{ domain.icon }}" aria-hidden="true"></i></span>
-                <div class="ube-domain-hub__body">
-                  <h3>{{ domain.title }}</h3>
-                  <p>{{ domain.description }}</p>
-                  <ul class="ube-domain-hub__layers list-unstyled">
-                    <li><span>{{ _('Analytics & KPIs') }}</span></li>
-                    <li><span>{{ _('Dimensions & master data') }}</span></li>
-                    <li><span>{{ _('Facts & transactions') }}</span></li>
-                  </ul>
-                </div>
-                <span class="ube-domain-hub__footer">
-                  <strong>{{ domain.dataset_count }}</strong> {{ _('datasets') }} →
-                </span>
-              </a>
+              <article class="ube-domain-hub ube-reveal ube-reveal--delay-{{ loop.index }}">
+                <a class="ube-domain-hub__main" href="{{ h.url_for('group.read', id=domain.id) }}">
+                  <span class="ube-domain-hub__icon"><i class="fa {{ domain.icon }}" aria-hidden="true"></i></span>
+                  <div class="ube-domain-hub__body">
+                    <h3>{{ domain.title }}</h3>
+                    <p>{{ domain.description }}</p>
+                  </div>
+                  <span class="ube-domain-hub__footer">
+                    <strong>{{ domain.dataset_count }}</strong> {{ _('datasets') }} →
+                  </span>
+                </a>
+                <ul class="ube-domain-hub__layers list-unstyled" aria-label="{{ _('Browse by layer') }}">
+                  <li>
+                    <a class="ube-domain-hub__layer-link" href="{{ h.ube_group_catalog_url(domain.id, 'mart') }}">
+                      {{ _('Marts') }} <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="ube-domain-hub__layer-link" href="{{ h.ube_group_catalog_url(domain.id, 'dimension') }}">
+                      {{ _('Dimensions') }} <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="ube-domain-hub__layer-link" href="{{ h.ube_group_catalog_url(domain.id, 'fact') }}">
+                      {{ _('Facts') }} <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                </ul>
+              </article>
             </div>
           {% endfor %}
         </div>
       </div>
     </section>
 
-    <section class="ube-section ube-section--pipeline">
+    <section class="ube-section ube-section--pipeline ube-reveal">
       <div class="container">
-        <div class="ube-pipeline">
-          <div class="ube-pipeline__item">
+        <div class="ube-section__head ube-section__head--center">
+          <div>
+            <h2>{{ _('From source to catalog') }}</h2>
+            <p class="ube-section__subtitle">{{ _('Enterprise ELT pipeline — data lands here after Gold transformation') }}</p>
+          </div>
+        </div>
+        <div class="ube-pipeline" role="list">
+          <div class="ube-pipeline__item ube-reveal ube-reveal--delay-1" role="listitem">
             <span class="ube-pipeline__step">1</span>
             <strong>Airbyte</strong>
             <small>{{ _('Bronze ingest') }}</small>
           </div>
-          <div class="ube-pipeline__item">
+          <span class="ube-pipeline__connector" aria-hidden="true"></span>
+          <div class="ube-pipeline__item ube-reveal ube-reveal--delay-2" role="listitem">
             <span class="ube-pipeline__step">2</span>
             <strong>dbt</strong>
             <small>{{ _('Silver / Gold') }}</small>
           </div>
-          <div class="ube-pipeline__item">
+          <span class="ube-pipeline__connector" aria-hidden="true"></span>
+          <div class="ube-pipeline__item ube-reveal ube-reveal--delay-3" role="listitem">
             <span class="ube-pipeline__step">3</span>
             <strong>Airflow</strong>
             <small>{{ _('Orchestration') }}</small>
           </div>
-          <div class="ube-pipeline__item ube-pipeline__item--active">
+          <span class="ube-pipeline__connector ube-pipeline__connector--active" aria-hidden="true"></span>
+          <div class="ube-pipeline__item ube-pipeline__item--active ube-reveal ube-reveal--delay-4" role="listitem">
             <span class="ube-pipeline__step">4</span>
             <strong>CKAN</strong>
             <small>{{ _('Open catalog') }}</small>
@@ -198,7 +236,7 @@
       </div>
     </section>
 
-    <section class="ube-section ube-section--cta">
+    <section class="ube-section ube-section--cta ube-reveal">
       <div class="container">
         <div class="ube-cta-panel">
           <div class="ube-cta-panel__logo">

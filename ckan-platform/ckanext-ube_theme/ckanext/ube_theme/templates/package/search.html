@@ -1,0 +1,36 @@
+{% ckan_extends "package/search.html" %}
+
+{% block subtitle %}
+  {% if c.q %}
+    {{ _('Search') }}: {{ c.q }}
+  {% else %}
+    {{ _('Browse datasets') }}
+  {% endif %}
+{% endblock %}
+
+{% block primary_content %}
+  {% set org = h.ube_org_id() %}
+  <header class="ube-search-page__head">
+    <h1 class="ube-search-page__title">
+      {% if c.q %}
+        {{ _('Search results') }}
+      {% else %}
+        {{ _('All datasets') }}
+      {% endif %}
+    </h1>
+    <p class="ube-search-page__lead">
+      {{ _('Filter by domain or open the grouped catalog for marts, dimensions, and facts.') }}
+    </p>
+    <div class="ube-search-page__shortcuts">
+      <a class="ube-pill" href="{{ h.url_for('organization.read', id=org) }}">
+        <i class="fa fa-th-large" aria-hidden="true"></i> {{ _('Grouped catalog') }}
+      </a>
+      {% for domain in h.ube_catalog_domains() %}
+        <a class="ube-pill" href="{{ h.url_for('group.read', id=domain.id) }}">
+          <i class="fa {{ domain.icon }}" aria-hidden="true"></i> {{ domain.title }}
+        </a>
+      {% endfor %}
+    </div>
+  </header>
+  {{ super() }}
+{% endblock %}

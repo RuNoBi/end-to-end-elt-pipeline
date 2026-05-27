@@ -10,3 +10,8 @@
 {% endblock %}
 
 {% block bodytag %}{{ super() }} class="ube-body"{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="/js/ube.js" defer></script>
+{% endblock %}
