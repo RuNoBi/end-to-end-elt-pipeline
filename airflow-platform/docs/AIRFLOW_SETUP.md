@@ -2,7 +2,7 @@
 
 Step-by-step instructions to wire Airflow to your existing Docker stack.
 
-**Failure email alerts:** see [AIRFLOW_ALERTING.md](./AIRFLOW_ALERTING.md) (SMTP + `6733193821@student.chula.ac.th` or your on-call list).
+**Failure email alerts:** see [AIRFLOW_ALERTING.md](./AIRFLOW_ALERTING.md) (Mailpit locally, optional SMTP relay).
 
 ## Prerequisites
 
@@ -20,11 +20,7 @@ Step-by-step instructions to wire Airflow to your existing Docker stack.
    cd ../airbyte-platform && docker compose up -d
    ```
 
-3. Airbyte connection **`source -> dwh`** exists with ID:
-
-   ```
-   b84b53a7-abfa-4c29-9f6b-c663dd0f4283
-   ```
+3. Airbyte connection **`source -> dwh`** exists.
 
    Verify in Airbyte UI: **Connections → source -> dwh → Settings** (connection UUID in URL or settings).
 
@@ -78,7 +74,7 @@ Set these in `airflow-platform/.env` (loaded on container start):
 
 | Variable | Example |
 |----------|---------|
-| `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` | `b84b53a7-abfa-4c29-9f6b-c663dd0f4283` |
+| `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` | your Airbyte connection UUID |
 | `AIRFLOW_VAR_AIRBYTE_API_BASE_URL` | `http://airbyte-proxy:8000/api/v1` |
 
 Optional check from the scheduler container:
@@ -97,7 +93,7 @@ print(r.status_code, r.json().get('job', {}).get('id'))
 - From inside Airflow containers, Airbyte API base URL is:
   `http://airbyte-proxy:8000/api/v1/`
 - Sync endpoint used by the provider: `POST /connections/sync`
-- Verified locally with connection ID `b84b53a7-abfa-4c29-9f6b-c663dd0f4283`
+- Works with any Airbyte connection UUID (OSS Config API).
 
 ---
 
@@ -108,7 +104,7 @@ The DAG reads Variable **`airbyte_connection_id`**.
 **Option A — via `.env` (recommended, already in compose):**
 
 ```env
-AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=b84b53a7-abfa-4c29-9f6b-c663dd0f4283
+AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=<your_connection_uuid>
 ```
 
 Restart scheduler after changing:
@@ -121,7 +117,7 @@ docker compose restart airflow-scheduler airflow-webserver
 
 1. **Admin → Variables → +**
 2. Key: `airbyte_connection_id`
-3. Val: `b84b53a7-abfa-4c29-9f6b-c663dd0f4283`
+3. Val: your connection UUID
 
 ---
 

@@ -1,8 +1,9 @@
-# Scalable Modern Data Stack (MDS) — Medallion Architecture
+# End-to-end ELT platform (Airbyte → dbt → Airflow → CKAN)
 
-**Repository:** `end-to-end-elt-pipeline`
+**Repo:** `end-to-end-elt-pipeline`
 
-A modular **ELT** reference implementation that demonstrates how to ingest, transform, and serve analytics-ready data using industry-standard open-source tooling. Each platform component runs in an isolated Docker container on a shared bridge network, with clear separation between **Bronze**, **Silver**, and **Gold** layers.
+Production-shaped **ELT** reference stack for local demos and portfolio work:
+Airbyte lands raw data (**Bronze**) → dbt builds curated analytics models (**Silver/Gold**) → Airflow orchestrates runs + alerts → CKAN publishes Gold tables to a professional catalog UI.
 
 ---
 
@@ -19,7 +20,7 @@ The stack is designed to scale from a laptop PoC to a team environment by swappi
 
 ---
 
-## Architecture
+## Architecture (high-level)
 
 ```mermaid
 flowchart TB
@@ -32,9 +33,9 @@ flowchart TB
   end
 
   subgraph warehouse["PostgreSQL Warehouse"]
-    BRZ[(Bronze<br/>src_local_postgres)]
-    SLV[(Silver<br/>silver)]
-    GLD[(Gold<br/>gold)]
+    BRZ[(Bronze<br/>src_* schemas)]
+    SLV[(Silver<br/>silver_* schemas)]
+    GLD[(Gold<br/>gold_* schemas)]
   end
 
   subgraph transform["Transformation Layer"]
@@ -42,12 +43,14 @@ flowchart TB
   end
 
   subgraph consume["Consumption"]
+    CKAN[CKAN Catalog<br/>Gold tables]
     BI[BI / SQL Clients]
   end
 
   SRC --> AB --> BRZ
   BRZ --> DBT --> SLV
   SLV --> DBT --> GLD
+  GLD --> CKAN
   GLD --> BI
 ```
 
@@ -56,11 +59,11 @@ flowchart TB
 ### Medallion layers
 
 
-| Layer      | Schema               | Owner   | Purpose                                                                                              |
-| ---------- | -------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| **Bronze** | `src_local_postgres` | Airbyte | Raw landing tables from source systems (includes Airbyte metadata columns)                           |
-| **Silver** | `silver`             | dbt     | Conformed, deduplicated **incremental tables** — decoupled from Bronze at the database catalog level |
-| **Gold**   | `gold`               | dbt     | Dimensional models (`dim_`*, `fct_*`) and report marts (`mart_*`) for analytics                      |
+| Layer | Examples | Owner | Purpose |
+|------|----------|-------|---------|
+| **Bronze** | `src_local_postgres`, `src_sap_chemicals` | Airbyte | Raw landing tables (includes `_airbyte_*` metadata columns) |
+| **Silver** | `silver_sales`, `silver_sap` | dbt | Conformed, deduplicated **incremental tables** (not views on Bronze) |
+| **Gold** | `gold_sales`, `gold_sap` | dbt | Dimensions (`dim_*`), facts (`fct_*`), marts (`mart_*`) for analytics + CKAN publishing |
 
 
 ### Containerization
@@ -88,8 +91,8 @@ end-to-end-elt-pipeline/
 | **Transformation**            | [dbt Core](https://www.getdbt.com/)           | SQL models, tests, documentation, incremental processing    |
 | **Warehouse**                 | [PostgreSQL 16](https://www.postgresql.org/)  | Central store for Bronze, Silver, and Gold                  |
 | **Containerization**          | Docker & Docker Compose                       | Environment isolation and reproducible deployments          |
-| **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | Config-driven ELT DAGs (`elt_pipelines.py`); PoC: `elt_main_pipeline`, `elt_sap_chemicals` |
-| **Data Catalog**              | [CKAN](https://ckan.org/) (`ckan-platform/`)  | Gold marts published to Datastore; UI :5001                 |
+| **Orchestration** | [Apache Airflow](https://airflow.apache.org/) | Config-driven ELT DAG factory from YAML (`airflow-platform/config/pipelines/*.yaml`) |
+| **Data Catalog** | [CKAN](https://ckan.org/) (`ckan-platform/`) | Gold tables published to CKAN Datastore; UI `:5001` |
 
 
 ---
@@ -101,8 +104,23 @@ end-to-end-elt-pipeline/
 - **Environment isolation** — Credentials via `.env` (git-ignored); `.env.example` templates for each service
 - **Data quality** — dbt tests (`unique`, `not_null`, `relationships`, `dbt_utils` range checks) on sources and marts
 - **Performance-aware design** — Incremental facts, indexes via post-hooks, configurable `DBT_THREADS` for ~1M+ row workloads
-- **Orchestrated ELT** — Airflow: Airbyte → **source freshness** → Silver → **SCD2 snapshot** → tests → Gold → email alerts
+- **Orchestrated ELT** — Airflow: Airbyte → **source freshness** → Silver → snapshots → tests → Gold → CKAN publish → email alerts
 - **Local best practices** — [docs/BEST_PRACTICES_LOCAL.md](docs/BEST_PRACTICES_LOCAL.md) (prune hooks, CI, config-as-code)
+
+---
+
+## Documentation hub (start here)
+
+- **Docs index:** `docs/README.md`
+- **Runbook (Thai, step-by-step):** `docs/RUN_STEP_BY_STEP.md`
+- **Credential map:** `docs/CREDENTIALS.md`
+- **Multi-pipeline architecture (YAML → DAG):** `docs/MULTI_PIPELINE_ARCHITECTURE.md`
+- **SAP pipeline guide:** `docs/SAP_CHEMICALS_PIPELINE.md`
+- **Failure drills (practice incidents):** `docs/MONITORING_FAILURE_DRILL.md`
+- **Failure email debug checklist:** `docs/FAILURE_EMAIL_DEBUG_CHECKLIST.md`
+- **Airflow setup:** `airflow-platform/docs/AIRFLOW_SETUP.md`
+- **Airflow email alerting:** `airflow-platform/docs/AIRFLOW_ALERTING.md`
+- **CKAN setup + token sync:** `ckan-platform/docs/CKAN_SETUP.md`
 
 ---
 
@@ -116,7 +134,7 @@ end-to-end-elt-pipeline/
 
 ## Quick Start
 
-### 1. Clone and configure
+### 1. Clone and configure `.env`
 
 ```bash
 git clone https://github.com/<your-username>/end-to-end-elt-pipeline.git
@@ -130,7 +148,7 @@ cp dbt-warehouse/.env.example dbt-warehouse/.env
 cp airflow-platform/.env.example airflow-platform/.env
 ```
 
-**Full runbook (Thai):** [docs/RUN_STEP_BY_STEP.md](docs/RUN_STEP_BY_STEP.md) · **Credential map:** [docs/CREDENTIALS.md](docs/CREDENTIALS.md)
+See the full Thai runbook: `docs/RUN_STEP_BY_STEP.md`
 
 ### 2. Create the shared Docker network
 
@@ -159,7 +177,7 @@ cd ../airbyte-platform && docker compose up -d
 | Airbyte UI         | [http://localhost:8000](http://localhost:8000) |
 
 
-### 4. Configure Airbyte (UI)
+### 4. Configure Airbyte (UI, first time)
 
 1. **Source** — Postgres: `de_poc_source_postgres:5432` (from inside Docker network)
 2. **Destination** — Postgres warehouse: `de_poc_warehouse_postgres:5432`, schema `src_local_postgres`
@@ -209,7 +227,7 @@ docker compose build && docker compose up -d
 |---------|-----|
 | Airflow UI | [http://localhost:8080](http://localhost:8080) |
 
-Set `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` and `AIRFLOW_VAR_AIRBYTE_API_BASE_URL` in `airflow-platform/.env`, then unpause DAG **`elt_main_pipeline`**.
+Set `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID` / `AIRFLOW_VAR_AIRBYTE_API_BASE_URL` in `airflow-platform/.env`, then unpause and trigger DAG **`elt_main_pipeline`**.
 
 Full guide: [airflow-platform/docs/AIRFLOW_SETUP.md](airflow-platform/docs/AIRFLOW_SETUP.md)
 
@@ -235,7 +253,7 @@ LIMIT 20;
 
 ---
 
-## End-to-end workflow
+## End-to-end workflow (typical)
 
 ```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
@@ -250,10 +268,10 @@ LIMIT 20;
                                                           └─────────────┘
 ```
 
-**Automated (Airflow):** DAG `elt_main_pipeline` — Airbyte sync → dbt run → dbt test → monitoring logs  
-**Manual fallback:** Airbyte Sync → `make run` → `make test`
+**Automated (Airflow):** `elt_main_pipeline` — Airbyte sync → freshness → Silver → tests → Gold → CKAN publish  
+**Manual fallback:** Airbyte Sync → `dbt-warehouse`: `make run` → `make test`
 
-Detailed runbook: `[dbt-warehouse/docs/PRODUCTION_WORKFLOW.md](dbt-warehouse/docs/PRODUCTION_WORKFLOW.md)`
+Detailed dbt workflow: `dbt-warehouse/docs/PRODUCTION_WORKFLOW.md`
 
 ---
 
@@ -276,7 +294,7 @@ cd ../source-postgres && docker compose stop
 ### Start of day (recommended run order)
 
 Use `--no-recreate` for daily startup to keep stateful DBs stable (prevents CKAN token churn).
-If you intentionally changed Docker images / env, use the normal `up -d` (or rebuild) and then rerun `ckan-platform/scripts/bootstrap-ckan.sh`.
+If you recreated `ckan-db` (or you see `Authorization Error` on `publish_gold_to_ckan`), rerun `ckan-platform/scripts/bootstrap-ckan.sh` and then restart Airflow.
 
 ```bash
 # Recommended: one command for daily start

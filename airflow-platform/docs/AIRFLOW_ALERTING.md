@@ -14,7 +14,7 @@ This repo ships with **Mailpit** SMTP inside Docker:
 |------|--------|
 | SMTP host (from Airflow) | `airflow-mailpit:1025` |
 | Web inbox | **http://localhost:8025** |
-| Alert recipient | `6733193821@student.chula.ac.th` (shown in Mailpit UI) |
+| Alert recipient | `AIRFLOW_ALERT_EMAILS` from `airflow-platform/.env` (shown in Mailpit UI) |
 
 Start / restart:
 
@@ -57,7 +57,7 @@ docker compose up -d airflow-mailpit airflow-scheduler
 Edit `airflow-platform/.env` (never commit):
 
 ```bash
-AIRFLOW_ALERT_EMAILS=6733193821@student.chula.ac.th
+AIRFLOW_ALERT_EMAILS=your_oncall_list@example.com
 AIRFLOW_WEBSERVER_BASE_URL=http://localhost:8080
 AIRFLOW_SMTP_HOST=smtp.gmail.com
 AIRFLOW_SMTP_PORT=587

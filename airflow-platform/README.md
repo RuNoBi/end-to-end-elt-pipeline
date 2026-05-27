@@ -44,10 +44,10 @@ airflow-scheduler
     └─► PythonOperator (monitoring logs)
 ```
 
-## Connection ID
+## Airbyte connection ID
 
-Default Airbyte connection UUID (Variable `airbyte_connection_id`):
+Set the Airbyte connection UUID in `.env` (recommended):
 
-`b84b53a7-abfa-4c29-9f6b-c663dd0f4283`
+`AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=<your_connection_uuid>`
 
-Override in `.env`: `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=...`
+Or set Airflow Variable `airbyte_connection_id` via UI.

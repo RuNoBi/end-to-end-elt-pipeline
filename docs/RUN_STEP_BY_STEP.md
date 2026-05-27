@@ -110,7 +110,7 @@ docker compose up -d
    - Sync mode ต้องเป็น **incremental + append_dedup** (customers: `created_at`, orders: `order_date`) — ดู [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)  
    - Schedule: **Manual** (ให้ Airflow เป็นคนสั่ง sync)
 
-4. กด **Sync now** ครั้งแรก (หรือรอ Airflow ในขั้น 5)
+4. กด **Sync now** ครั้งแรก (หรือรอ Airflow ในขั้น 6)
 
 ---
 
@@ -182,7 +182,7 @@ docker compose up -d
 ### ตั้งค่า Airflow (ครั้งเดียว)
 
 1. ตรวจ `airflow-platform/.env` มี:
-   - `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=b84b53a7-abfa-4c29-9f6b-c663dd0f4283`
+   - `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID=<connection-uuid-from-airbyte-ui>`
    - `AIRFLOW_VAR_AIRBYTE_API_BASE_URL=http://airbyte-proxy:8000/api/v1`
 2. `docker compose up -d` ใน `airflow-platform` (ไม่ต้องสร้าง connection `airbyte_default` แล้ว)
 3. **DAGs → `elt_main_pipeline` → Unpause → Trigger**
