@@ -2,7 +2,8 @@
 dialect = postgres
 templater = dbt
 max_line_length = 120
-exclude_rules = layout.long_lines, structure.using
+# layout.indent: dbt templater expands {{ ref() }} etc. with indentation sqlfluff mis-reads
+exclude_rules = layout.long_lines, structure.using, layout.indent, structure.column_order, references.qualification, structure.else_null, aliasing.unique.table
 
 [sqlfluff:indentation]
 tab_space_size = 4

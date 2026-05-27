@@ -35,10 +35,10 @@ de_poc_warehouse:
       retries: 1
     ci:
       type: postgres
-      host: localhost
-      port: 5432
-      user: ci
-      password: ci
-      dbname: ci
-      schema: ci
-      threads: 1
+      host: "{{ env_var('DBT_WAREHOUSE_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_WAREHOUSE_PORT', '5432') | int }}"
+      user: "{{ env_var('DBT_WAREHOUSE_USER', 'ci') }}"
+      password: "{{ env_var('DBT_WAREHOUSE_PASSWORD', 'ci') }}"
+      dbname: "{{ env_var('DBT_WAREHOUSE_DB', 'ci') }}"
+      schema: "{{ env_var('DBT_WAREHOUSE_SCHEMA', 'ci') }}"
+      threads: "{{ env_var('DBT_THREADS', '1') | int }}"
