@@ -1,0 +1,45 @@
+# Countries reference via HTTP API (Airbyte) → Bronze src_api_countries → dbt → CKAN.
+# Setup: docs/API_COUNTRIES_PIPELINE.md
+
+pipeline_id: api_countries
+dag_id: elt_api_countries
+enabled: true
+description: "Dynamics-style countries API (Airbyte) → Bronze → dim_country → CKAN"
+owner: data-engineering
+tags:
+  - elt
+  - api
+  - reference-data
+schedule: "0 12 * * *"
+timezone: Asia/Bangkok
+max_active_runs: 1
+catchup: false
+start_date: "2026-01-01"
+
+airbyte:
+  connection_id_variable: airbyte_connection_id_api_countries
+  api_base_url_variable: airbyte_api_base_url
+  poll_interval_seconds: 30
+  timeout_seconds: 7200
+  bronze_schema: src_api_countries
+  expected_streams:
+    countries:
+      syncMode: full_refresh
+      destinationSyncMode: overwrite
+      # Use incremental + append_dedup when your API connector exposes a cursor field
+
+dbt:
+  bronze_source: src_api_countries
+  silver_schema: silver_api
+  gold_schema: gold_api
+  freshness_select: "source:bronze_meta.watermark_src_api_countries"
+  silver_run_select: "tag:pipeline_api_countries"
+  snapshots: []
+  silver_test_select: "tag:pipeline_api_countries source:src_api_countries"
+  run_singular_tests: false
+  gold_run_select: "tag:pipeline_api_countries"
+  gold_test_select: "tag:pipeline_api_countries"
+
+ckan:
+  enabled: true
+  publications_file: api_countries.yaml

@@ -1,0 +1,16 @@
+# CKAN datasets for pipeline api_countries
+
+publications:
+  - package_name: country-dimension
+    package_title: Country Reference (API)
+    resource_name: dim_country
+    schema: gold_api
+    table: dim_country
+    description: >
+      Country master from API/Dynamics-style feed (ISO-style codes, status flags).
+    primary_key: country_id
+    max_rows: "50000"
+    frequency: daily
+    catalog_domain: api-reference
+    catalog_layer: dimension
+    catalog_order: 10

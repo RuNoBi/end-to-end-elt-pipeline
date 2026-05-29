@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_countries
+    description: >
+      Silver conformed countries from API/Dynamics-style Bronze feed.
+      One row per country_id; duplicate ISO codes in source are collapsed
+      (prefer longest country_name, then latest bronze_loaded_at).
+    columns:
+      - name: country_id
+        tests:
+          - unique
+          - not_null
+      - name: country_code
+        tests:
+          - unique
+          - not_null
+      - name: country_name
+        tests:
+          - not_null

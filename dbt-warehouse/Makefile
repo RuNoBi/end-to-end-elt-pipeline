@@ -4,7 +4,7 @@
 COMPOSE := docker compose --profile tools run --rm dbt
 PROJECT_DIR := /usr/app
 
-.PHONY: help build debug deps run run-sales run-sap run-full migrate-schemas freshness snapshot test test-silver test-sales test-sap docs docs-serve clean parse lint
+.PHONY: help build debug deps run run-sales run-sap run-api run-full migrate-schemas freshness snapshot test test-silver test-sales test-sap test-api docs docs-serve clean parse lint
 
 help:
 	@echo "Targets: build, deps, freshness, run, run-sales, run-sap, run-full, migrate-schemas, snapshot"
@@ -28,6 +28,9 @@ run-sales:
 
 run-sap:
 	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select tag:pipeline_sap_chemicals
+
+run-api:
+	$(COMPOSE) run --profiles-dir $(PROJECT_DIR) --select tag:pipeline_api_countries
 
 # First run after schema migration — rebuilds all models in silver_* / gold_* schemas
 run-full:

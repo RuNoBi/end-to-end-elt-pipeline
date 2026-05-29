@@ -19,6 +19,15 @@ Verify locally:
 
 The DAG runs `validate_airbyte_connection` before every sync and fails if modes are wrong.
 
+## API countries (`elt_api_countries`)
+
+See [API_COUNTRIES_PIPELINE.md](API_COUNTRIES_PIPELINE.md).
+
+- [ ] Airbyte: stream `countries`, namespace `src_api_countries`, **full_refresh** + **overwrite**, schedule **manual**
+- [ ] `AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_API_COUNTRIES` in `airflow-platform/.env` and mapped in `docker-compose.yml`
+- [ ] After changing `.env`: `docker compose up -d airflow-scheduler airflow-webserver` (not `restart` only)
+- [ ] dbt: Silver/Gold are **tables**; Bronze row count may exceed Silver by 1+ when ISO codes duplicate in source
+
 ## Airflow
 
 - [ ] DAG `elt_main_pipeline` enabled; `max_active_runs=1`

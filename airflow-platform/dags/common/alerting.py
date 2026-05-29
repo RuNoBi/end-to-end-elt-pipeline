@@ -393,7 +393,7 @@ def _build_insight(task_id: str, exception: Any, log_text: str) -> FailureInsigh
             "re-run extraction if synced_at is old or missing."
         )
 
-    elif "extraction" in task_id:
+    elif "extraction" in task_id or "trigger_airbyte_sync" in task_id:
         job = re.search(r"job[_ ]?id[=: ]+(\d+)", log_text, re.IGNORECASE)
         err = re.search(r"(error|failed)[^\n]{0,120}", log_text, re.IGNORECASE)
         root_cause = f"Airbyte sync failed (job {job.group(1)})" if job else "Airbyte extraction failed"

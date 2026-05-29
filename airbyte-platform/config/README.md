@@ -18,7 +18,9 @@ Keep **sync definition** in git even when the UI was used to create the connecti
 
 | File | Purpose |
 |------|---------|
-| `connection.template.json` | Documented shape for streams & incremental modes |
+| `connection.template.json` | Retail Postgres → warehouse |
+| `connection.sap_chemicals.template.json` | SAP schema → warehouse |
+| `connection.api_countries.template.json` | HTTP API countries → `src_api_countries` |
 | `connections/*.json` | Exported configs (add to git when ready) |
 
 ## Production path

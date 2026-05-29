@@ -16,6 +16,13 @@ domains:
     icon: fa-flask
     sort_order: 2
 
+  api-reference:
+    title: API Reference Data
+    description: >
+      Master data ingested via HTTP API (Dynamics-style country reference).
+    icon: fa-globe
+    sort_order: 3
+
 layers:
   mart:
     title: Analytics & KPIs

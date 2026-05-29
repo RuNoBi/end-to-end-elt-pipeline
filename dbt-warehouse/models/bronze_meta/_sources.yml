@@ -28,3 +28,12 @@ sources:
         freshness:
           warn_after: { count: 36, period: hour }
           error_after: { count: 48, period: hour }
+
+      - name: watermark_src_api_countries
+        identifier: sync_watermarks
+        description: Last successful ingest for API countries Bronze (src_api_countries).
+        loaded_at_field: synced_at
+        filter: bronze_schema = 'src_api_countries'
+        freshness:
+          warn_after: { count: 36, period: hour }
+          error_after: { count: 48, period: hour }

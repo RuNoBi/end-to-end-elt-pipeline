@@ -84,12 +84,17 @@ def build_elt_dag(cfg: dict[str, Any]) -> DAG:
         "owner": cfg.get("owner", "data-engineering"),
     }
 
-    airbyte_cfg = cfg.get("airbyte") or {}
-    if airbyte_cfg and not airbyte_cfg.get("pipeline_id"):
-        airbyte_cfg = {**airbyte_cfg, "pipeline_id": pipeline_id}
+    airbyte_cfg = dict(cfg.get("airbyte") or {})
+    if not airbyte_cfg:
+        raise ValueError(
+            f"Pipeline {pipeline_id}: missing airbyte: block (required for ELT DAGs)"
+        )
+    if not airbyte_cfg.get("pipeline_id"):
+        airbyte_cfg["pipeline_id"] = pipeline_id
+
+    bronze_schema = (airbyte_cfg.get("bronze_schema") or "").strip()
 
     dbt_cfg = dict(cfg.get("dbt") or {})
-    bronze_schema = (airbyte_cfg.get("bronze_schema") or "").strip()
     if bronze_schema and not dbt_cfg.get("freshness_select"):
         dbt_cfg["freshness_select"] = f"source:bronze_meta.watermark_{bronze_schema}"
 
@@ -124,7 +129,7 @@ def build_elt_dag(cfg: dict[str, Any]) -> DAG:
 
         with TaskGroup(
             group_id="validation",
-            tooltip="Bronze SLA: source freshness",
+            tooltip="Bronze SLA: ingest watermark",
         ) as validation_group:
             BashOperator(
                 task_id="dbt_source_freshness",

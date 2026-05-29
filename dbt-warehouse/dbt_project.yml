@@ -28,6 +28,9 @@ vars:
   schema_silver_sap: silver_sap
   schema_gold_sales: gold_sales
   schema_gold_sap: gold_sap
+  schema_silver_api: silver_api
+  schema_gold_api: gold_api
+  api_raw_schema: src_api_countries
 
 # ---------------------------------------------------------------------------
 # models/pipelines/<pipeline_id>/
@@ -120,6 +123,28 @@ models:
             +schema: gold_sap
             +materialized: table
             +tags: ["gold", "mart", "pipeline_sap_chemicals"]
+            +post-hook:
+              - "analyze {{ this }}"
+
+      api_countries:
+        +owner: data-engineering
+        +meta:
+          pipeline_id: api_countries
+          domain: api_reference
+          bronze_schema: src_api_countries
+          silver_schema: silver_api
+          gold_schema: gold_api
+        staging:
+          +schema: silver_api
+          +materialized: table
+          +on_schema_change: sync_all_columns
+          +tags: ["silver", "medallion_silver", "pipeline_api_countries"]
+        marts:
+          dimensions:
+            +schema: gold_api
+            +materialized: table
+            +on_schema_change: sync_all_columns
+            +tags: ["gold", "dimension", "pipeline_api_countries"]
             +post-hook:
               - "analyze {{ this }}"
 

@@ -1,0 +1,22 @@
+{
+  "name": "UBE QAS Countries -> dwh",
+  "connectionId": "REPLACE_AFTER_UI_OR_EXPORT",
+  "namespaceDefinition": "customformat",
+  "namespaceFormat": "src_api_countries",
+  "prefix": "",
+  "nonBreakingChangesPreference": "ignore",
+  "scheduleType": "manual",
+  "syncCatalog": {
+    "streams": [
+      {
+        "stream": { "name": "countries" },
+        "config": {
+          "syncMode": "full_refresh",
+          "destinationSyncMode": "overwrite",
+          "selected": true
+        }
+      }
+    ]
+  },
+  "notes": "HTTP/API source (Dynamics-style country JSON). Stream name must be countries. Namespace src_api_countries. UUID only in airflow-platform/.env as AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_API_COUNTRIES."
+}

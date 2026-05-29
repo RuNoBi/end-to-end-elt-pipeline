@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: dim_country
+    description: >
+      Gold country reference dimension from API master data.
+      Built from stg_countries (one row per country_code after Silver dedupe).
+    columns:
+      - name: country_id
+        tests:
+          - unique
+          - not_null
+      - name: country_code
+        tests:
+          - unique
+          - not_null
+      - name: is_active
+        description: Derived from statecode=0 and statuscode=1.

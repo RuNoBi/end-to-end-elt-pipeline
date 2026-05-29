@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: src_api_countries
+    description: >
+      Country reference landed by Airbyte (Connector Builder / HTTP API).
+      Column names match the Dynamics-style JSON payload (lowercase in Bronze).
+    database: "{{ env_var('DBT_WAREHOUSE_DB') }}"
+    schema: src_api_countries
+    loader: airbyte
+    loaded_at_field: _airbyte_extracted_at
+    # Ingest SLA: source:bronze_meta.watermark_src_api_countries
+
+    tables:
+      - name: countries
+        description: Raw country records from API feed.
+        columns:
+          - name: countryid
+            tests:
+              - not_null
+              - unique
+          - name: countrycode
+            tests:
+              - not_null
+          - name: country
+            tests:
+              - not_null

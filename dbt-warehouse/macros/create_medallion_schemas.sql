@@ -5,6 +5,8 @@
         var('schema_silver_sap'),
         var('schema_gold_sales'),
         var('schema_gold_sap'),
+        var('schema_silver_api'),
+        var('schema_gold_api'),
         'dbt_audit',
     ] %}
     {% for schema in schemas %}

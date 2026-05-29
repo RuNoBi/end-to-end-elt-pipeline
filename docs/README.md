@@ -17,6 +17,7 @@ Use this folder as the “runbook + design docs” for the ELT platform.
 
 - `MULTI_PIPELINE_ARCHITECTURE.md` — one YAML → one DAG; how to add pipelines
 - `SAP_CHEMICALS_PIPELINE.md` — SAP pipeline setup (one source DB, two Airbyte connections)
+- `API_COUNTRIES_PIPELINE.md` — countries API via Airbyte (HTTP → Bronze → dbt → CKAN)
 
 ## Monitoring & drills
 
