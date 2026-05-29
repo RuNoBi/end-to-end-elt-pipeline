@@ -22,9 +22,9 @@ renamed as (
         trim(countryid) as country_id,
         upper(trim(countrycode)) as country_code,
         trim(country) as country_name,
-        nullif(trim(importsequencenumber), '')::bigint as import_sequence_number,
-        nullif(trim(statecode), '')::smallint as state_code,
-        nullif(trim(statuscode), '')::smallint as status_code,
+        cast(nullif(trim(importsequencenumber), '') as bigint) as import_sequence_number,
+        cast(nullif(trim(statecode), '') as smallint) as state_code,
+        cast(nullif(trim(statuscode), '') as smallint) as status_code,
         cast(_airbyte_extracted_at as timestamptz) as bronze_loaded_at,
         current_timestamp as dbt_updated_at
     from source
@@ -44,7 +44,7 @@ deduplicated as (
         bronze_loaded_at,
         dbt_updated_at
     from renamed
-    order by country_id, bronze_loaded_at desc
+    order by country_id asc, bronze_loaded_at desc
 
 ),
 
@@ -62,7 +62,7 @@ deduped_by_country_code as (
         dbt_updated_at
     from deduplicated
     order by
-        country_code,
+        country_code asc,
         length(country_name) desc,
         bronze_loaded_at desc
 
