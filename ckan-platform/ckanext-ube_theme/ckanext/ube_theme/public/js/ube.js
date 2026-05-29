@@ -76,6 +76,46 @@
     });
   }
 
+  function animateCounter(el, target, duration) {
+    var start = 0;
+    var startTime = null;
+    function frame(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = String(Math.round(start + (target - start) * eased));
+      if (progress < 1) {
+        window.requestAnimationFrame(frame);
+      }
+    }
+    window.requestAnimationFrame(frame);
+  }
+
+  function initStatCounters() {
+    if (prefersReduced) return;
+    var counters = document.querySelectorAll("[data-ube-counter]");
+    if (!counters.length || !("IntersectionObserver" in window)) return;
+
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var el = entry.target;
+          var target = parseInt(el.getAttribute("data-ube-counter") || "0", 10);
+          if (!isNaN(target)) {
+            animateCounter(el, target, 900);
+          }
+          observer.unobserve(el);
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    counters.forEach(function (el) {
+      observer.observe(el);
+    });
+  }
+
   function initScrollReveal() {
     applyAutoReveal();
 
@@ -114,6 +154,7 @@
     document.body.classList.add("ube-motion");
     initHero();
     initScrollReveal();
+    initStatCounters();
   }
 
   if (document.readyState === "loading") {

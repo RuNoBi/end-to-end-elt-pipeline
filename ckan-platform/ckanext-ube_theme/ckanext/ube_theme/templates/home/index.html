@@ -8,6 +8,8 @@
   <div class="ube-home" role="main">
     <section class="ube-hero-banner ube-animate-hero">
       <div class="ube-hero-banner__pattern" aria-hidden="true"></div>
+      <div class="ube-hero-banner__orb ube-hero-banner__orb--1" aria-hidden="true"></div>
+      <div class="ube-hero-banner__orb ube-hero-banner__orb--2" aria-hidden="true"></div>
       <div class="container">
         <div class="row align-items-center g-4">
           <div class="col-lg-7">
@@ -64,27 +66,39 @@
       </div>
     </section>
 
+    <div class="ube-trust-bar ube-reveal" aria-hidden="true">
+      <div class="container">
+        <div class="ube-trust-bar__inner">
+          <span class="ube-trust-bar__item"><i class="fa fa-check-circle" aria-hidden="true"></i> {{ _('Gold-layer certified') }}</span>
+          <span class="ube-trust-bar__sep"></span>
+          <span class="ube-trust-bar__item"><i class="fa fa-shield" aria-hidden="true"></i> {{ _('Enterprise ELT') }}</span>
+          <span class="ube-trust-bar__sep"></span>
+          <span class="ube-trust-bar__item"><i class="fa fa-table" aria-hidden="true"></i> {{ _('In-browser Data Explorer') }}</span>
+        </div>
+      </div>
+    </div>
+
     <section class="ube-stats ube-reveal">
       <div class="container">
         <div class="row g-3">
           <div class="col-md-4">
             <div class="ube-stat-card ube-reveal ube-reveal--delay-1">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-folder-open"></i></span>
-              <span class="ube-stat-card__value">{{ stats.datasets }}</span>
+              <span class="ube-stat-card__value" data-ube-counter="{{ stats.datasets }}">{{ stats.datasets }}</span>
               <span class="ube-stat-card__label">{{ _('Datasets') }}</span>
             </div>
           </div>
           <div class="col-md-4">
             <div class="ube-stat-card ube-reveal ube-reveal--delay-2">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-database"></i></span>
-              <span class="ube-stat-card__value">{{ stats.resources }}</span>
+              <span class="ube-stat-card__value" data-ube-counter="{{ stats.resources }}">{{ stats.resources }}</span>
               <span class="ube-stat-card__label">{{ _('Data resources') }}</span>
             </div>
           </div>
           <div class="col-md-4">
             <div class="ube-stat-card ube-reveal ube-reveal--delay-3">
               <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-building"></i></span>
-              <span class="ube-stat-card__value">{{ stats.organizations }}</span>
+              <span class="ube-stat-card__value" data-ube-counter="{{ stats.organizations }}">{{ stats.organizations }}</span>
               <span class="ube-stat-card__label">{{ _('Publisher') }}</span>
             </div>
           </div>
