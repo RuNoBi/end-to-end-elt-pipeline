@@ -28,7 +28,7 @@ The DAG runs `validate_airbyte_connection` before every sync and fails if modes 
 
 ## dbt
 
-- [ ] `dbt source freshness` SLA: warn 24h / error 72h on `_airbyte_extracted_at`
+- [ ] `dbt source freshness` SLA on `bronze_meta.sync_watermarks` (36h warn / 48h error per `models/bronze_meta/_sources.yml`)
 - [ ] Silver tests pass before Gold (`dbt_test_silver` in DAG)
 - [ ] CI: `.github/workflows/quality-gates.yml` (Postgres service + compile)
 

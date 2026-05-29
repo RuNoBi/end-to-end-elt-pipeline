@@ -36,7 +36,8 @@ dbt:
   bronze_source: src_local_postgres
   silver_schema: silver_sales
   gold_schema: gold_sales
-  freshness_select: "source:src_local_postgres"
+  # Default in DAG factory: source:bronze_meta.watermark_src_local_postgres
+  freshness_select: "source:bronze_meta.watermark_src_local_postgres"
   silver_run_select: "tag:pipeline_sales_local_postgres"
   snapshots:
     - snap_stg_customers

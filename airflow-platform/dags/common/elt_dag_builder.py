@@ -84,8 +84,16 @@ def build_elt_dag(cfg: dict[str, Any]) -> DAG:
         "owner": cfg.get("owner", "data-engineering"),
     }
 
-    dbt_cmds = build_dbt_commands(cfg.get("dbt") or {})
     airbyte_cfg = cfg.get("airbyte") or {}
+    if airbyte_cfg and not airbyte_cfg.get("pipeline_id"):
+        airbyte_cfg = {**airbyte_cfg, "pipeline_id": pipeline_id}
+
+    dbt_cfg = dict(cfg.get("dbt") or {})
+    bronze_schema = (airbyte_cfg.get("bronze_schema") or "").strip()
+    if bronze_schema and not dbt_cfg.get("freshness_select"):
+        dbt_cfg["freshness_select"] = f"source:bronze_meta.watermark_{bronze_schema}"
+
+    dbt_cmds = build_dbt_commands(dbt_cfg)
     ckan_cfg = cfg.get("ckan") or {}
     airbyte_callable = make_airbyte_sync_callable(airbyte_cfg)
 

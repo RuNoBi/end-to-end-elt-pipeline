@@ -17,6 +17,7 @@ clean-targets:
 
 on-run-start:
   - "{{ create_medallion_schemas() }}"
+  - "{{ create_bronze_meta() }}"
 
 vars:
   raw_schema: src_local_postgres

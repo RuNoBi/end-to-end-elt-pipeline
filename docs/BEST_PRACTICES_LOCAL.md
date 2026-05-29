@@ -27,7 +27,7 @@ Airbyte → dbt run (all) → dbt test (all) → monitor
 ### After
 ```text
 Airbyte
-  → dbt source freshness     ← Bronze SLA (stale data fails fast)
+  → dbt source freshness     ← Bronze SLA on sync watermark (job succeeded recently)
   → dbt run Silver
   → dbt snapshot (SCD2)      ← customer history
   → dbt test Silver + sources + singular tests
@@ -38,7 +38,7 @@ Airbyte
 
 | Change | Why |
 |--------|-----|
-| **`dbt source freshness`** | `_sources.yml` already had 24h warn / 72h error — now enforced in the DAG |
+| **`dbt source freshness`** | `bronze_meta.sync_watermarks` — SLA on last Airbyte success (36h warn / 48h error), not row `_airbyte_extracted_at` |
 | **Silver before Gold tests** | Bad data blocked before marts (already had; kept) |
 | **`dbt deps` fails hard** | Removed `\|\| true` so broken packages cannot hide |
 | **Email on failure** | Mailpit + `on_failure_callback` (unchanged) |
@@ -107,7 +107,37 @@ UUID stays in `airflow-platform/.env`; JSON is for review and git.
 
 ---
 
-## 8. Profiles
+## 8. Many DAGs at once (production pattern)
+
+Airflow in production runs **hundreds of DAGs concurrently**. That is fine when each task is **stateless on shared disk**:
+
+| Concern | PoC approach (senior DE pattern) |
+|---------|----------------------------------|
+| dbt packages | **`dbt deps` at Docker build** → `/opt/dbt-vendor/dbt_packages` (not on the bind-mounted project). Runtime tasks set `DBT_PACKAGES_INSTALL_PATH`. |
+| Compiled SQL / `target/` | **`DBT_TARGET_PATH` per task run** under `/tmp/dbt-target/<dag>/<run>/<task>` so concurrent runs do not clobber each other. |
+| dbt models/macros | Bind mount `dbt-warehouse` → `/opt/dbt` (read-mostly; edit on host, scheduler picks up changes). |
+| Warehouse | Postgres handles concurrent connections; separate **schemas per pipeline** (`silver_sales` vs `silver_sap`, etc.). |
+| Same DAG twice | `max_active_runs: 1` per pipeline YAML — avoids two runs of *one* pipeline stepping on the same tables, not a global lock. |
+
+**Do not** run `dbt deps` on a shared mount from every task (old anti-pattern): `deps` deletes and reinstalls `dbt_packages`, which races when tasks overlap.
+
+After changing `dbt-warehouse/packages.yml`, rebuild the Airflow image (`docker compose build` in `airflow-platform`).
+
+### Bronze freshness (sync watermark)
+
+| Anti-pattern | Production pattern (this repo) |
+|--------------|--------------------------------|
+| `freshness` on `max(_airbyte_extracted_at)` | Fails when incremental sync commits 0 rows |
+| Full refresh every run | Expensive; not needed for SLA |
+| Skip freshness | No ingest guardrail |
+
+**Pattern:** Airflow writes `bronze_meta.sync_watermarks` after Airbyte succeeds → dbt checks `source:bronze_meta.watermark_<bronze_schema>`.
+
+See `dbt-warehouse/models/bronze_meta/README.md`.
+
+---
+
+## 9. Profiles
 
 `dbt-warehouse/profiles.yml`:
 
@@ -117,7 +147,7 @@ UUID stays in `airflow-platform/.env`; JSON is for review and git.
 
 ---
 
-## 9. CKAN catalog (`ckan-platform/`)
+## 10. CKAN catalog (`ckan-platform/`)
 
 - Separate containers (CKAN + Solr + Redis + Datastore DB)
 - Airflow **`publication.publish_gold_to_ckan`** after Gold tests

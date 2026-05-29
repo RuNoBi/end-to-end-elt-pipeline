@@ -46,7 +46,7 @@ dbt:
   bronze_source: src_sap_chemicals
   silver_schema: silver_sap
   gold_schema: gold_sap
-  freshness_select: "source:src_sap_chemicals"
+  freshness_select: "source:bronze_meta.watermark_src_sap_chemicals"
   silver_run_select: "tag:pipeline_sap_chemicals"
   snapshots: []
   silver_test_select: "tag:pipeline_sap_chemicals source:src_sap_chemicals"

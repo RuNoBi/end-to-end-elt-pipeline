@@ -191,7 +191,7 @@ docker compose up -d
 
 ```text
 extraction (Airbyte sync)
-    → validation (dbt source freshness — Bronze SLA)
+    → validation (dbt source freshness on `bronze_meta.sync_watermarks`)
     → transformation (run Silver → snapshot → test Silver → run Gold → test Gold)
     → publication (CKAN publish Gold marts → http://localhost:5001)
     → monitoring (log run status — รันแม้ pipeline fail)

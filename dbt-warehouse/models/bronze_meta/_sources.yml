@@ -1,0 +1,30 @@
+version: 2
+
+# Sync SLA (production pattern): freshness on last successful Airbyte job, not max(_airbyte_extracted_at).
+# Airflow writes bronze_meta.sync_watermarks after each successful sync (even 0 rows committed).
+# Raw Bronze tables keep loaded_at_field for ops queries; SLA gate uses these watermark sources.
+
+sources:
+  - name: bronze_meta
+    description: Pipeline ingest metadata — one logical watermark per Bronze schema.
+    database: "{{ env_var('DBT_WAREHOUSE_DB') }}"
+    schema: bronze_meta
+    loader: airbyte
+    tables:
+      - name: watermark_src_local_postgres
+        identifier: sync_watermarks
+        description: Last successful sync for retail Bronze (src_local_postgres).
+        loaded_at_field: synced_at
+        filter: bronze_schema = 'src_local_postgres'
+        freshness:
+          warn_after: { count: 36, period: hour }
+          error_after: { count: 48, period: hour }
+
+      - name: watermark_src_sap_chemicals
+        identifier: sync_watermarks
+        description: Last successful sync for SAP chemicals Bronze (src_sap_chemicals).
+        loaded_at_field: synced_at
+        filter: bronze_schema = 'src_sap_chemicals'
+        freshness:
+          warn_after: { count: 36, period: hour }
+          error_after: { count: 48, period: hour }

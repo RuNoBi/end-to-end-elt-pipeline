@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
@@ -11,6 +12,7 @@ from airflow.exceptions import AirflowException
 from airflow.models import Variable
 
 from common.airbyte_validate import validate_airbyte_connection
+from common.bronze_watermark import record_bronze_sync_watermark
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +156,8 @@ def make_airbyte_sync_callable(airbyte_cfg: dict[str, Any]):
     poll_interval = int(airbyte_cfg.get("poll_interval_seconds", 30))
     timeout = int(airbyte_cfg.get("timeout_seconds", 7200))
     expected_streams = airbyte_cfg.get("expected_streams") or {}
+    bronze_schema = (airbyte_cfg.get("bronze_schema") or "").strip()
+    pipeline_id = (airbyte_cfg.get("pipeline_id") or "").strip() or None
 
     def run_airbyte_oss_sync(**context: Any) -> dict[str, Any]:
         conn_id = _require_connection_id(conn_var)
@@ -179,12 +183,36 @@ def make_airbyte_sync_callable(airbyte_cfg: dict[str, Any]):
         result = _wait_for_airbyte_job(base, job_id, poll_interval, timeout)
         job = result.get("job") or {}
         stats = _job_progress_stats(job)
-        return {
+        emitted = stats.get("recordsEmitted")
+        committed = stats.get("recordsCommitted")
+        payload = {
             "preflight": preflight,
             "jobId": job_id,
             "status": job.get("status"),
-            "recordsEmitted": stats.get("recordsEmitted"),
-            "recordsCommitted": stats.get("recordsCommitted"),
+            "recordsEmitted": emitted,
+            "recordsCommitted": committed,
         }
+
+        if bronze_schema:
+            synced_at = datetime.now(timezone.utc)
+            record_bronze_sync_watermark(
+                bronze_schema=bronze_schema,
+                connection_id=conn_id,
+                pipeline_id=pipeline_id,
+                synced_at=synced_at,
+                job_id=job_id,
+                records_emitted=int(emitted) if emitted is not None else None,
+                records_committed=int(committed) if committed is not None else None,
+            )
+            payload["bronzeWatermark"] = {
+                "bronze_schema": bronze_schema,
+                "synced_at": synced_at.isoformat(),
+            }
+        else:
+            logger.warning(
+                "airbyte.bronze_schema not set — skipping bronze_meta.sync_watermarks update"
+            )
+
+        return payload
 
     return run_airbyte_oss_sync

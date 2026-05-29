@@ -388,7 +388,10 @@ def _build_insight(task_id: str, exception: Any, log_text: str) -> FailureInsigh
         src = re.search(r"source:([\w_]+)", log_text)
         if src:
             steps.append(f"Re-run: `dbt source freshness --select source:{src.group(1)}`")
-        steps.append("Confirm the latest Airbyte sync for this pipeline completed successfully.")
+        steps.append(
+            "Check `bronze_meta.sync_watermarks` for this pipeline's bronze_schema — "
+            "re-run extraction if synced_at is old or missing."
+        )
 
     elif "extraction" in task_id:
         job = re.search(r"job[_ ]?id[=: ]+(\d+)", log_text, re.IGNORECASE)
@@ -397,6 +400,31 @@ def _build_insight(task_id: str, exception: Any, log_text: str) -> FailureInsigh
         if err:
             root_cause += f" — {err.group(0)[:100]}"
         steps.append("Inspect the failed Airbyte job and the first stream-level error in its logs.")
+
+    elif "dbt_snapshot" in task_id:
+        if "only 0 package" in log_text and "dbt_packages" in log_text:
+            root_cause = "dbt package dependencies missing (image vendor path or stale mount)"
+            steps.append(
+                "Rebuild Airflow image: `cd airflow-platform && docker compose build && "
+                "docker compose up -d airflow-scheduler` (packages are baked at /opt/dbt-vendor/dbt_packages)."
+            )
+            steps.append("Local dev only: `cd dbt-warehouse && make deps` — then clear + rerun transformation tasks.")
+        else:
+            snap_fail = re.search(r"Failure in snapshot\s+(\S+)", log_text)
+            root_cause = (
+                f"dbt snapshot failed: {snap_fail.group(1)}"
+                if snap_fail
+                else "dbt snapshot failed"
+            )
+            steps.append("Re-run: `dbt snapshot --select <snapshot_name>` inside the scheduler container.")
+
+    elif "publish_gold_to_ckan" in task_id:
+        if "cannot edit the organization" in log_text.lower() or "authorization" in log_text.lower():
+            root_cause = "CKAN API token stale or out of sync after CKAN DB rebuild"
+            steps.append("Run: `cd ckan-platform && ./scripts/bootstrap-ckan.sh`")
+            steps.append("Then: `cd airflow-platform && docker compose up -d airflow-scheduler airflow-webserver`")
+        else:
+            root_cause = str(exception)[:200] if exception else "CKAN publish failed — see task log"
 
     else:
         root_cause = str(exception)[:200] if exception else "Task failed — see log highlights"
@@ -411,6 +439,12 @@ def _build_insight(task_id: str, exception: Any, log_text: str) -> FailureInsigh
             steps.insert(0, f"Missing relation `{m.group(1)}` — run upstream models or check schema.")
         else:
             steps.insert(0, "Missing table — run upstream dbt models.")
+    if "only 0 package" in body_lower and "dbt_packages" in body_lower:
+        steps.insert(
+            0,
+            "Rebuild Airflow image after changing dbt-warehouse/packages.yml "
+            "(vendor packages live in the image, not on the bind mount).",
+        )
 
     deduped: list[str] = []
     for s in steps:

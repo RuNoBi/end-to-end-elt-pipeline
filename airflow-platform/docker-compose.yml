@@ -2,8 +2,8 @@ name: airflow-platform
 
 x-airflow-common: &airflow-common
   build:
-    context: .
-    dockerfile: Dockerfile
+    context: ..
+    dockerfile: airflow-platform/Dockerfile
   image: de-poc-airflow:latest
   env_file:
     - .env
@@ -26,6 +26,8 @@ x-airflow-common: &airflow-common
     DBT_WAREHOUSE_SCHEMA: ${DBT_WAREHOUSE_SCHEMA}
     DBT_TARGET: ${DBT_TARGET:-prod}
     DBT_THREADS: ${DBT_THREADS}
+    # Baked in image at build time — safe for concurrent DAGs (see docs/BEST_PRACTICES_LOCAL.md)
+    DBT_PACKAGES_INSTALL_PATH: /opt/dbt-vendor/dbt_packages
     AIRFLOW_VAR_AIRBYTE_CONNECTION_ID: ${AIRFLOW_VAR_AIRBYTE_CONNECTION_ID}
     AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_SAP_CHEMICALS: ${AIRFLOW_VAR_AIRBYTE_CONNECTION_ID_SAP_CHEMICALS:-}
     AIRFLOW_VAR_AIRBYTE_API_BASE_URL: ${AIRFLOW_VAR_AIRBYTE_API_BASE_URL:-http://airbyte-proxy:8000/api/v1}

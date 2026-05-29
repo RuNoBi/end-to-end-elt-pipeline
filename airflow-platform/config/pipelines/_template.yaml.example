@@ -31,7 +31,8 @@ airbyte:
 
 dbt:
   bronze_source: src_my_new_source
-  freshness_select: "source:src_my_new_source"
+  # Add watermark_<bronze_schema> to models/bronze_meta/_sources.yml first
+  freshness_select: "source:bronze_meta.watermark_src_my_new_source"
   # Tag all models for this pipeline: pipeline_my_new_source (see dbt_project.yml + model tags)
   silver_run_select: "tag:pipeline_my_new_source"
   snapshots: []

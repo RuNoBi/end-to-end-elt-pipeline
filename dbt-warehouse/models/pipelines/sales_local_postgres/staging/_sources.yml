@@ -9,10 +9,7 @@ sources:
     schema: src_local_postgres
     loader: airbyte
     loaded_at_field: _airbyte_extracted_at
-
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 72, period: hour }
+    # Ingest SLA: source:bronze_meta.watermark_src_local_postgres (sync job time, not row extract time).
 
     tables:
       - name: customers

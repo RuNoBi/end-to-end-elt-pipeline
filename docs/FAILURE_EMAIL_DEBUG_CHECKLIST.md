@@ -17,7 +17,7 @@ Related: [AIRFLOW_ALERTING.md](../airflow-platform/docs/AIRFLOW_ALERTING.md) · 
 | Task contains | Layer | Usually means |
 |---------------|-------|----------------|
 | `extraction` | Bronze ingest | Airbyte sync failed |
-| `dbt_source_freshness` | Bronze SLA | Data too stale / DB connection |
+| `dbt_source_freshness` | Bronze SLA (sync watermark) | No recent successful Airbyte sync |
 | `dbt_run_silver` | Silver build | SQL/model error |
 | `dbt_test_silver` | Silver gate | **Data quality test failed** |
 | `dbt_run_gold` / `dbt_test_gold` | Gold | Mart/test issue |
@@ -167,17 +167,49 @@ WHERE partner_number = 'BP_NOT_EXIST';
 
 ### B) Bronze freshness (`dbt_source_freshness`)
 
-1. [ ] Check `extraction` / Airbyte sync succeeded  
-2. [ ] Confirm `_airbyte_extracted_at` moved forward on Bronze tables  
-3. [ ] `dbt source freshness --select source:<bronze_schema>`  
+SLA is on **`bronze_meta.sync_watermarks`** (last **successful Airbyte job**), not `max(_airbyte_extracted_at)` on raw tables.
 
-### C) Silver build (`dbt_run_silver`)
+Log `ERROR STALE` on `bronze_meta.watermark_*` → no successful sync recorded within SLA (**warn 36h / error 48h**).
+
+1. [ ] `extraction.trigger_airbyte_sync` **green** in the same run (watermark is written only after sync succeeds)  
+2. [ ] Watermark row exists and is recent:
+
+```sql
+SELECT bronze_schema, synced_at, job_id, records_committed,
+       now() - synced_at AS age
+FROM bronze_meta.sync_watermarks
+WHERE bronze_schema = 'src_local_postgres';  -- or src_sap_chemicals
+```
+
+3. [ ] If row missing or old: fix Airbyte connection, re-run **extraction** (not only validation)  
+4. [ ] Re-run: clear `validation` → downstream, or full DAG trigger  
+
+**Note:** Raw `max(_airbyte_extracted_at)` can stay old when source data is unchanged (incremental). That is expected; use the watermark query above for ingest SLA.
+
+### C) `dbt_snapshot` — `dbt_packages` compilation error
+
+Symptom in log:
+
+```text
+dbt found 1 package(s) specified in packages.yml, but only 0 package(s) installed in dbt_packages
+```
+
+| Check | Action |
+|-------|--------|
+| [ ] `packages.yml` changed | `cd airflow-platform && docker compose build && docker compose up -d airflow-scheduler` (packages baked at `/opt/dbt-vendor/dbt_packages`) |
+| [ ] Local dev only | `cd dbt-warehouse && make deps` (host `./dbt_packages`; Airflow does not use this path) |
+| [ ] Scheduler has new DAG code | `docker compose restart airflow-scheduler` |
+| [ ] Re-run | Clear `transformation.*` and trigger DAG |
+
+Many DAGs may run in parallel; packages are **read-only in the image**, not installed on the shared `/opt/dbt` mount at runtime.
+
+### D) Silver build (`dbt_run_silver`)
 
 1. [ ] Open task log — first SQL/database error  
 2. [ ] `dbt run --select <failing_model>`  
 3. [ ] Check `DBT_WAREHOUSE_*` if connection error  
 
-### D) Airbyte (`extraction`)
+### E) Airbyte (`extraction`)
 
 1. [ ] Airbyte UI → failed job → stream error  
 2. [ ] Fix connector / schema / credentials  

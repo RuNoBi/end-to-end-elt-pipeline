@@ -40,7 +40,7 @@ airflow-scheduler
     └─► Monitor: `log_pipeline_status` (`all_done` — runs on failure too)
 
 **Alerts:** SMTP email on any task failure (after retries) — [docs/AIRFLOW_ALERTING.md](docs/AIRFLOW_ALERTING.md)
-    ├─► BashOperator (dbt run/test) →  /opt/dbt (mounted dbt-warehouse/)
+    ├─► BashOperator (dbt run/test) →  /opt/dbt (mounted models) + vendor packages in image
     └─► PythonOperator (monitoring logs)
 ```
 
