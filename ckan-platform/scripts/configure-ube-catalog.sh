@@ -79,6 +79,11 @@ CATALOG_GROUPS = [
         "SAP Chemical Sales",
         "SAP-style chemical sales — materials, partners, and order lines.",
     ),
+    (
+        "api-reference",
+        "API Reference Data",
+        "Master data from HTTP API (Dynamics-style country reference).",
+    ),
 ]
 
 print("Ensuring catalog groups (domains) ...")
@@ -99,6 +104,7 @@ PACKAGE_CATALOG = {
     "sap-chemical-materials": ("sap-chemicals", "dimension", "20"),
     "sap-chemical-customers": ("sap-chemicals", "dimension", "21"),
     "sap-chemical-sales-lines": ("sap-chemicals", "fact", "30"),
+    "country-dimension": ("api-reference", "dimension", "10"),
 }
 
 print(f"Ensuring organization {org} ...")

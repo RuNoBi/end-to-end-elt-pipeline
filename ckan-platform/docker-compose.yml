@@ -109,6 +109,8 @@ services:
       - "${CKAN_PORT_HOST:-5001}:5000"
     volumes:
       - ckan_storage:/var/lib/ckan
+      # Live theme from repo (pip -e in image); rebuild image only when Dockerfile/deps change
+      - ./ckanext-ube_theme:/srv/app/ckanext-ube_theme:ro
     depends_on:
       ckan-db:
         condition: service_healthy

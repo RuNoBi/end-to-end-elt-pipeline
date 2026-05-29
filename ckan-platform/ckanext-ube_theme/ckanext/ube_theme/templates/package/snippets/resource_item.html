@@ -2,7 +2,7 @@
 
 {% block resource_item_title %}
   <div class="ube-resource-title">
-    <a class="heading" href="{{ url }}" title="{{ res.name or res.description }}">
+    <a class="heading" href="{{ h.ube_data_explorer_url(pkg.name, res.id) or url }}" title="{{ res.name or res.description }}">
       {{ h.resource_display_name(res) | truncate(60) }}
     </a>
     <span class="ube-format-pill">{{ (res.format or 'TABLE')|upper }}</span>
@@ -16,7 +16,7 @@
     {% set preview_url = h.ube_data_explorer_url(pkg.name, res.id) %}
     {% if preview_url %}
       <a class="btn btn-primary ube-resource-preview-btn" href="{{ preview_url }}">
-        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
+        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Explore') }}
       </a>
     {% endif %}
   {% endif %}

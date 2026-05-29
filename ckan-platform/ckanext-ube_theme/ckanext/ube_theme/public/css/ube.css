@@ -481,10 +481,22 @@ a:hover {
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
 }
 
-.ube-dataset-card:hover {
+.ube-dataset-card:hover,
+a.ube-dataset-card--clickable:hover {
   border-color: var(--ube-blue-500);
   box-shadow: var(--ube-shadow);
   transform: translateY(-2px);
+}
+
+a.ube-dataset-card--clickable {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+a.ube-dataset-card--clickable:focus-visible {
+  outline: 2px solid var(--ube-blue-500);
+  outline-offset: 3px;
 }
 
 .ube-dataset-card__top {
@@ -511,14 +523,12 @@ a:hover {
   color: var(--ube-slate-500);
 }
 
-.ube-dataset-card h3 {
+.ube-dataset-card h3,
+.ube-dataset-card__title {
   font-size: 1.02rem;
   margin: 0 0 0.45rem;
-}
-
-.ube-dataset-card h3 a {
   color: var(--ube-blue-900);
-  text-decoration: none;
+  line-height: 1.3;
 }
 
 .ube-dataset-card p {
@@ -530,9 +540,25 @@ a:hover {
 }
 
 .ube-dataset-card__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--ube-slate-500);
-  margin-bottom: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.ube-dataset-card__open-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ube-blue-700);
+  white-space: nowrap;
+}
+
+a.ube-dataset-card--clickable:hover .ube-dataset-card__open-hint {
+  color: var(--ube-blue-900);
 }
 
 .ube-dataset-card__btn {
@@ -855,10 +881,22 @@ a:hover {
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
 }
 
-.ube-catalog-card__inner:hover {
+.ube-catalog-card__inner:hover,
+a.ube-catalog-card__inner--clickable:hover {
   border-color: var(--ube-blue-500);
   box-shadow: var(--ube-shadow);
   transform: translateY(-2px);
+}
+
+a.ube-catalog-card__inner--clickable {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+a.ube-catalog-card__inner--clickable:focus-visible {
+  outline: 2px solid var(--ube-blue-500);
+  outline-offset: 3px;
 }
 
 .ube-catalog-card__header {
@@ -888,11 +926,7 @@ a:hover {
   font-size: 1.05rem;
   margin: 0 0 0.5rem;
   line-height: 1.3;
-}
-
-.ube-catalog-card__title a {
   color: var(--ube-blue-900);
-  text-decoration: none;
 }
 
 .ube-catalog-card__notes {
@@ -903,10 +937,15 @@ a:hover {
   line-height: 1.45;
 }
 
-.ube-catalog-card__footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.ube-catalog-card__open-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ube-blue-700);
+  white-space: nowrap;
+}
+
+a.ube-catalog-card__inner--clickable:hover .ube-catalog-card__open-hint {
+  color: var(--ube-blue-900);
 }
 
 /* Dataset detail — compact */
@@ -1684,22 +1723,16 @@ a:hover {
   color: #fff;
 }
 
-.ube-dataset-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 0.75rem;
-}
-
-.ube-dataset-card__actions .btn {
-  flex: 1 1 auto;
-}
-
 .ube-catalog-card__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.82rem;
   color: var(--ube-slate-500);
-  margin: 0 0 0.5rem;
+  margin: 0;
+  margin-top: auto;
+  padding-top: 0.5rem;
 }
 
 /* —— Motion & scroll reveal —— */

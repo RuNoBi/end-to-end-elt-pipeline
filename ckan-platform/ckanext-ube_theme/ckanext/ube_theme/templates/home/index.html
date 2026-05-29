@@ -107,9 +107,13 @@
           <div class="row g-3">
             {% for pkg in featured %}
               {% set meta = h.ube_package_catalog_meta(pkg) %}
-              {% set preview_url = h.ube_data_explorer_url(pkg.name) %}
+              {% set open_url = h.ube_data_explorer_url_from_package(pkg) or h.url_for('dataset.read', id=pkg.name) %}
               <div class="col-md-6 col-lg-4">
-                <article class="ube-dataset-card ube-reveal ube-reveal--delay-{{ loop.index % 4 + 1 }}">
+                <a
+                  class="ube-dataset-card ube-dataset-card--clickable ube-reveal ube-reveal--delay-{{ loop.index % 4 + 1 }}"
+                  href="{{ open_url }}"
+                  aria-label="{{ _('Explore data') }}: {{ pkg.title or pkg.name }}"
+                >
                   <div class="ube-dataset-card__top">
                     <span class="ube-dataset-card__badge ube-dataset-card__badge--layer">{{ meta.layer_title }}</span>
                     <span class="ube-dataset-card__badge ube-dataset-card__badge--domain">{{ meta.domain_title }}</span>
@@ -117,29 +121,16 @@
                       <span class="ube-dataset-card__time">{{ h.time_ago_from_timestamp(pkg.metadata_modified) }}</span>
                     {% endif %}
                   </div>
-                  <h3>
-                    <a href="{{ h.url_for('dataset.read', id=pkg.name) }}">
-                      {{ pkg.title or pkg.name }}
-                    </a>
-                  </h3>
+                  <h3 class="ube-dataset-card__title">{{ pkg.title or pkg.name }}</h3>
                   {% if pkg.notes %}
                     <p>{{ h.markdown_extract(pkg.notes, 100) }}</p>
                   {% endif %}
                   <div class="ube-dataset-card__meta">
                     <span><i class="fa fa-database" aria-hidden="true"></i>
                       {{ (pkg.resources or [])|length }} {{ _('resources') }}</span>
+                    <span class="ube-dataset-card__open-hint">{{ _('Explore') }} →</span>
                   </div>
-                  <div class="ube-dataset-card__actions">
-                    {% if preview_url %}
-                      <a class="btn btn-primary btn-sm" href="{{ preview_url }}">
-                        <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
-                      </a>
-                    {% endif %}
-                    <a class="btn btn-outline-primary btn-sm" href="{{ h.url_for('dataset.read', id=pkg.name) }}">
-                      {{ _('Details') }}
-                    </a>
-                  </div>
-                </article>
+                </a>
               </div>
             {% endfor %}
           </div>
@@ -244,7 +235,7 @@
           </div>
           <div class="ube-cta-panel__text">
             <h2>{{ _('Ready to explore?') }}</h2>
-            <p>{{ _('Open any dataset and use Data Explorer to preview rows — no SQL client required.') }}</p>
+            <p>{{ _('Click any dataset card to open details and preview rows — no SQL client required.') }}</p>
           </div>
           <a class="btn btn-light btn-lg" href="{{ h.url_for('organization.read', id=org) }}">
             {{ _('Open UBE catalog') }}

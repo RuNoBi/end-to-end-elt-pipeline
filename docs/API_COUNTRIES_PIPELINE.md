@@ -275,12 +275,20 @@ ORDER BY country_code;
 
 ### 7) CKAN (optional)
 
-Domain **API Reference Data** → dataset **Country Reference (API)**.
+Domain **API Reference Data** (`api-reference` group) → dataset **Country Reference (API)** (`country-dimension`).
 
-If publish fails after CKAN rebuild:
+After first publish (or if the domain card is missing on the homepage):
 
 ```bash
-cd ckan-platform && ./scripts/bootstrap-ckan.sh
+cd ckan-platform
+./scripts/configure-ube-catalog.sh   # creates api-reference group + tags country-dimension
+docker compose restart ckan          # reload theme catalog.py
+```
+
+If `configure-ube-catalog.sh` returns 403, refresh the API token:
+
+```bash
+./scripts/bootstrap-ckan.sh
 cd ../airflow-platform && docker compose up -d airflow-scheduler airflow-webserver
 ```
 

@@ -3,10 +3,14 @@
 {% block package_item %}
   {% set title = package.title or package.name %}
   {% set notes = h.markdown_extract(package.notes, extract_length=140) %}
-  {% set preview_url = h.ube_data_explorer_url(package.name) %}
   {% set meta = h.ube_package_catalog_meta(package) %}
+  {% set open_url = h.ube_data_explorer_url_from_package(package) or h.url_for('%s.read' % package.type, id=package.name) %}
   <li class="ube-catalog-card {{ item_class or '' }}">
-    <article class="ube-catalog-card__inner">
+    <a
+      class="ube-catalog-card__inner ube-catalog-card__inner--clickable"
+      href="{{ open_url }}"
+      aria-label="{{ _('Explore data') }}: {{ title }}"
+    >
       <header class="ube-catalog-card__header">
         <span class="ube-catalog-card__badge ube-catalog-card__badge--layer">{{ meta.layer_title }}</span>
         <span class="ube-catalog-card__badge ube-catalog-card__badge--domain">{{ meta.domain_title }}</span>
@@ -14,29 +18,20 @@
           <span class="ube-catalog-card__time">{{ h.time_ago_from_timestamp(package.metadata_modified) }}</span>
         {% endif %}
       </header>
-      <h2 class="ube-catalog-card__title">
-        <a href="{{ h.url_for('%s.read' % package.type, id=package.name) }}">{{ title|truncate(80) }}</a>
-      </h2>
+      <h2 class="ube-catalog-card__title">{{ title|truncate(80) }}</h2>
       {% if notes %}
         <p class="ube-catalog-card__notes">{{ notes }}</p>
       {% endif %}
       {% set res_count = (package.resources or [])|length %}
-      {% if res_count %}
-        <p class="ube-catalog-card__meta">
-          <i class="fa fa-database" aria-hidden="true"></i>
-          {{ res_count }} {{ _('resource') if res_count == 1 else _('resources') }}
-        </p>
-      {% endif %}
-      <footer class="ube-catalog-card__footer">
-        {% if preview_url %}
-          <a class="btn btn-primary btn-sm" href="{{ preview_url }}">
-            <i class="fa fa-table" aria-hidden="true"></i> {{ _('Preview') }}
-          </a>
+      <p class="ube-catalog-card__meta">
+        {% if res_count %}
+          <span>
+            <i class="fa fa-database" aria-hidden="true"></i>
+            {{ res_count }} {{ _('resource') if res_count == 1 else _('resources') }}
+          </span>
         {% endif %}
-        <a class="btn btn-outline-primary btn-sm" href="{{ h.url_for('%s.read' % package.type, id=package.name) }}">
-          {{ _('Details') }}
-        </a>
-      </footer>
-    </article>
+        <span class="ube-catalog-card__open-hint">{{ _('Explore') }} →</span>
+      </p>
+    </a>
   </li>
 {% endblock %}

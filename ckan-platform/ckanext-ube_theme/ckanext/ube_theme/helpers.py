@@ -189,43 +189,37 @@ def ube_primary_datastore_resource(package: dict[str, Any]) -> dict[str, Any] | 
     return resources[0] if resources else None
 
 
+def _dataset_resource_path(package_name: str, resource_id: str) -> str:
+    """
+    Resource detail page: metadata + Download/Data API + embedded Data Explorer.
+    (Not /view/… — that route is the stripped embed-only “preview” UI.)
+    """
+    return f"/dataset/{package_name}/resource/{resource_id}"
+
+
+def ube_data_explorer_url_from_package(package: dict[str, Any]) -> str | None:
+    """Open the primary datastore resource page (full Data Explorer layout)."""
+    name = (package.get("name") or "").strip()
+    if not name:
+        return None
+    resource = ube_primary_datastore_resource(package)
+    if not resource:
+        return None
+    return _dataset_resource_path(name, resource["id"])
+
+
 def ube_data_explorer_url(package_name: str, resource_id: str | None = None) -> str | None:
     """Direct link to Data Explorer (datatables_view) — one click from catalog UI."""
     try:
         package = toolkit.get_action("package_show")({}, {"id": package_name})
-        package_type = package.get("type") or "dataset"
-        resource = None
         if resource_id:
             for item in package.get("resources") or []:
                 if item["id"] == resource_id:
-                    resource = item
-                    break
-        else:
-            resource = ube_primary_datastore_resource(package)
-        if not resource:
+                    narrowed = dict(package)
+                    narrowed["resources"] = [item]
+                    return ube_data_explorer_url_from_package(narrowed)
             return None
-
-        views = toolkit.get_action("resource_view_list")({}, {"id": resource["id"]}) or []
-        view_id = None
-        for view in views:
-            if view.get("view_type") == "datatables_view":
-                view_id = view["id"]
-                break
-        if not view_id and views:
-            view_id = views[0]["id"]
-
-        if view_id:
-            return toolkit.url_for(
-                f"{package_type}_resource.view",
-                id=package_name,
-                resource_id=resource["id"],
-                view_id=view_id,
-            )
-        return toolkit.url_for(
-            f"{package_type}_resource.read",
-            id=package_name,
-            resource_id=resource["id"],
-        )
+        return ube_data_explorer_url_from_package(package)
     except Exception:
         logger.warning("ube_data_explorer_url failed for %s", package_name, exc_info=True)
         return None

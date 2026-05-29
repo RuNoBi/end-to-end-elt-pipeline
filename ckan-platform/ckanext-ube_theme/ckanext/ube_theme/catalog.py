@@ -23,6 +23,15 @@ CATALOG_DOMAINS: dict[str, dict[str, Any]] = {
         "icon": "fa-flask",
         "sort_order": 2,
     },
+    "api-reference": {
+        "id": "api-reference",
+        "title": "API Reference Data",
+        "description": (
+            "Master data ingested via HTTP API (Dynamics-style country reference)."
+        ),
+        "icon": "fa-globe",
+        "sort_order": 3,
+    },
 }
 
 CATALOG_LAYERS: dict[str, dict[str, Any]] = {
@@ -59,6 +68,8 @@ def infer_catalog_domain(package: dict[str, Any]) -> str:
     name = package.get("name") or ""
     if name.startswith("sap-"):
         return "sap-chemicals"
+    if name.startswith("country-") or "api" in name:
+        return "api-reference"
     return "retail-sales"
 
 
