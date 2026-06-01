@@ -5,9 +5,10 @@ Use this folder as the “runbook + design docs” for the ELT platform.
 ## New here (recommended order)
 
 1. `RUN_STEP_BY_STEP.md` — Thai step-by-step to bring the full stack up locally
-2. `CREDENTIALS.md` — which `.env` controls what (copy/paste friendly)
-3. `MULTI_PIPELINE_ARCHITECTURE.md` — how one YAML becomes one Airflow DAG
-4. `PRODUCTION_CHECKLIST.md` — preflight checks before daily runs
+2. `PLATFORM_LEARNING_GUIDE.md` — **Thai learning guide**: folder-by-folder overview + `sales_local_postgres` E2E workflow (file-by-file)
+3. `CREDENTIALS.md` — which `.env` controls what (copy/paste friendly)
+4. `MULTI_PIPELINE_ARCHITECTURE.md` — how one YAML becomes one Airflow DAG
+5. `PRODUCTION_CHECKLIST.md` — preflight checks before daily runs
 
 ## First-day quick path
 
@@ -15,6 +16,10 @@ Use this folder as the “runbook + design docs” for the ELT platform.
 2. Bring up services with `RUN_STEP_BY_STEP.md`
 3. Validate first DAG run in Airflow
 4. Verify CKAN catalog and Data Explorer
+
+## Learning & architecture
+
+- `PLATFORM_LEARNING_GUIDE.md` — platform folders, YAML wiring, retail pipeline workflow (reference for onboarding)
 
 ## Pipelines
 
