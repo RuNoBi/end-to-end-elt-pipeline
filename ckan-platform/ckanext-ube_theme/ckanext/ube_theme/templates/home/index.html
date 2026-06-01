@@ -78,35 +78,7 @@
       </div>
     </div>
 
-    <section class="ube-stats ube-reveal">
-      <div class="container">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="ube-stat-card ube-reveal ube-reveal--delay-1">
-              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-folder-open"></i></span>
-              <span class="ube-stat-card__value" data-ube-counter="{{ stats.datasets }}">{{ stats.datasets }}</span>
-              <span class="ube-stat-card__label">{{ _('Datasets') }}</span>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="ube-stat-card ube-reveal ube-reveal--delay-2">
-              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-database"></i></span>
-              <span class="ube-stat-card__value" data-ube-counter="{{ stats.resources }}">{{ stats.resources }}</span>
-              <span class="ube-stat-card__label">{{ _('Data resources') }}</span>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="ube-stat-card ube-reveal ube-reveal--delay-3">
-              <span class="ube-stat-card__icon" aria-hidden="true"><i class="fa fa-building"></i></span>
-              <span class="ube-stat-card__value" data-ube-counter="{{ stats.organizations }}">{{ stats.organizations }}</span>
-              <span class="ube-stat-card__label">{{ _('Publisher') }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {% snippet 'snippets/quick_start.html' %}
+    {% snippet 'snippets/quick_start.html', stats=stats %}
 
     <section class="ube-section ube-reveal">
       <div class="container">

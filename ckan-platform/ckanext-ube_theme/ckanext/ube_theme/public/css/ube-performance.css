@@ -1,0 +1,38 @@
+/*
+ * Scroll performance — disable motion that runs during scroll.
+ * Card/link hover lifts are kept in ube.css / ube-premium.css.
+ */
+
+/* Scroll reveal: always visible (JS observer removed) */
+.ube-reveal,
+.ube-reveal--visible,
+.ube-reveal.ube-reveal--lite {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.ube-stat-card.ube-reveal--visible {
+  animation: none !important;
+}
+
+/* Continuous background animations — repaint every frame while scrolling */
+.ube-hero-banner__pattern,
+.ube-hero-banner__orb,
+.ube-pipeline__connector,
+.ube-pipeline__item--active,
+.ube-pipeline__item--active.ube-pipeline__item {
+  animation: none !important;
+}
+
+.ube-hero-banner__orb {
+  display: none;
+}
+
+/* Sticky catalog bar: solid background instead of blur */
+.ube-catalog-toolbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--ube-white);
+}

@@ -1930,12 +1930,6 @@ a.ube-catalog-card__inner--clickable:hover .ube-catalog-card__open-hint {
   font-size: 0.85em;
 }
 
-/* Global motion (all pages) */
-body.ube-motion .primary .module,
-body.ube-motion .secondary .module {
-  will-change: opacity, transform;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .ube-hero-banner__pattern,
   .ube-pipeline__connector,

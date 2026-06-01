@@ -1,26 +1,34 @@
 <section class="ube-quick-start ube-reveal" aria-labelledby="ube-quick-start-title">
   <div class="container">
-    <h2 id="ube-quick-start-title" class="ube-quick-start__title">{{ _('Get to data in three steps') }}</h2>
+    <header class="ube-quick-start__head">
+      <h2 id="ube-quick-start-title" class="ube-quick-start__title">{{ _('How to explore data') }}</h2>
+      {% if stats %}
+        <p class="ube-quick-start__meta">
+          <span class="ube-quick-start__count">{{ stats.datasets }}</span>
+          {{ _('datasets ready to browse') }}
+        </p>
+      {% endif %}
+    </header>
     <ol class="ube-quick-start__steps">
       <li class="ube-quick-start__step">
         <span class="ube-quick-start__num" aria-hidden="true">1</span>
         <div>
-          <strong>{{ _('Pick a domain') }}</strong>
-          <p>{{ _('Retail sales or SAP chemicals — each domain groups related Gold tables.') }}</p>
+          <strong>{{ _('Open the catalog') }}</strong>
+          <p>{{ _('Browse by business area — retail, chemicals, and more.') }}</p>
         </div>
       </li>
       <li class="ube-quick-start__step">
         <span class="ube-quick-start__num" aria-hidden="true">2</span>
         <div>
-          <strong>{{ _('Choose layer') }}</strong>
-          <p>{{ _('Marts for KPIs, dimensions for attributes, facts for line-level detail.') }}</p>
+          <strong>{{ _('Pick a dataset') }}</strong>
+          <p>{{ _('Click a card to open the table you need.') }}</p>
         </div>
       </li>
       <li class="ube-quick-start__step">
         <span class="ube-quick-start__num" aria-hidden="true">3</span>
         <div>
-          <strong>{{ _('Explore in browser') }}</strong>
-          <p>{{ _('Click a dataset card to open the data table with Download and filters — no SQL client required.') }}</p>
+          <strong>{{ _('View and download') }}</strong>
+          <p>{{ _('See rows in your browser, filter, and download — no SQL required.') }}</p>
         </div>
       </li>
     </ol>

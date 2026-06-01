@@ -367,6 +367,27 @@ a.ube-dataset-card--clickable:hover .ube-dataset-card__open-hint {
   padding: 2.5rem 0;
 }
 
+.ube-quick-start__head {
+  text-align: center;
+}
+
+.ube-quick-start__head .ube-quick-start__title {
+  margin: 0 0 0.5rem;
+}
+
+.ube-quick-start__meta {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ube-slate-500);
+}
+
+.ube-quick-start__count {
+  font-family: var(--ube-font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--ube-blue-700);
+}
+
 .ube-quick-start__steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
