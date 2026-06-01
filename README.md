@@ -124,6 +124,17 @@ end-to-end-elt-pipeline/
 
 ---
 
+## New user fast path
+
+If this is your first time on the repo, follow this order:
+
+1. `docs/CREDENTIALS.md` (prepare `.env` values)
+2. `docs/RUN_STEP_BY_STEP.md` (bring up the full stack)
+3. `docs/PRODUCTION_CHECKLIST.md` (validate pipeline settings before daily runs)
+4. Trigger `elt_main_pipeline` in Airflow and verify CKAN output
+
+---
+
 ## Prerequisites
 
 - Docker Engine 24+ and Docker Compose v2

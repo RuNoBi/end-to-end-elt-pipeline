@@ -6,4 +6,4 @@ Dynamics-style country JSON via **Airbyte** → `src_api_countries` → `silver_
 - **Silver / Gold:** `table` materialization (rebuild each run; matches reference-data ingest).
 - **Dedupe:** one row per `country_code` in Silver (source may duplicate ISO codes, e.g. `CF`).
 
-Setup: [docs/API_COUNTRIES_PIPELINE.md](../../../docs/API_COUNTRIES_PIPELINE.md).
+Setup: [docs/API_COUNTRIES_PIPELINE.md](../../../../docs/API_COUNTRIES_PIPELINE.md).
